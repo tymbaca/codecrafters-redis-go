@@ -35,6 +35,10 @@ func Run() error {
 		_ = l.Close()
 	})
 
+	storage := &Storage{
+		data: make(map[string]enc.Value),
+	}
+
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -49,7 +53,7 @@ func Run() error {
 				_ = conn.Close()
 			})
 
-			err := handleConn(conn)
+			err := handleConn(conn, storage)
 			if err != nil {
 				slog.Error("handle conn failed", "err", err)
 			}
@@ -57,7 +61,7 @@ func Run() error {
 	}
 }
 
-func handleConn(conn io.ReadWriter) error {
+func handleConn(conn io.ReadWriter, storage *Storage) error {
 	for {
 		command, ok, err := readCommand(conn)
 		if err != nil {
@@ -68,7 +72,7 @@ func handleConn(conn io.ReadWriter) error {
 			return nil
 		}
 
-		err = handleCommand(conn, command)
+		err = handleCommand(conn, storage, command)
 		if err != nil {
 			return err
 		}
@@ -87,7 +91,7 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 	return val, true, nil
 }
 
-func handleCommand(storage Storage, conn io.Writer, command enc.Value) error {
+func handleCommand(conn io.Writer, storage *Storage, command enc.Value) error {
 	if command.Type() != enc.TypeArray {
 		return fmt.Errorf("exected array, got: %s (of type %s)", command.String(), command.Type())
 	}

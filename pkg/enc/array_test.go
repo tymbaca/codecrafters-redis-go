@@ -9,10 +9,10 @@ import (
 
 func TestArray(t *testing.T) {
 	a := Array{
-		BulkString("hello"),
+		BulkString{Val: "hello"},
 		SimpleString("world"),
 		Array{
-			BulkString("foo"),
+			BulkString{Val: "foo"},
 		},
 	}
 
@@ -26,10 +26,10 @@ func TestArray(t *testing.T) {
 	parsedVal, err := ReadValue(buf)
 	require.NoError(t, err)
 	require.Equal(t, Array{
-		BulkString("hello"),
+		BulkString{Val: "hello"},
 		SimpleString("world"),
 		Array{
-			BulkString("foo"),
+			BulkString{Val: "foo"},
 		},
 	}, parsedVal)
 }

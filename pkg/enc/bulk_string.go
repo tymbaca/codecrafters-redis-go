@@ -68,5 +68,5 @@ func readBulkString(r io.Reader) (Value, error) {
 		return nil, fmt.Errorf("bad CRLF: %w", err)
 	}
 
-	return BulkString(buf), nil
+	return BulkString{Val: string(buf)}, nil
 }
