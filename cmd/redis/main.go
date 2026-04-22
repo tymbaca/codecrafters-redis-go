@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/assert"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
@@ -20,10 +21,10 @@ func Run() error {
 	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Println("Logs from your program will appear here!")
-
-	// Uncomment the code below to pass the first stage
+	go func() {
+		<-time.After(2 * time.Second)
+		cancel()
+	}()
 
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
@@ -41,8 +42,12 @@ func Run() error {
 
 	for {
 		conn, err := l.Accept()
+		if errors.Is(err, net.ErrClosed) {
+			return nil
+		}
 		if err != nil {
 			slog.Error("accept conn failed", "err", err)
+			continue
 		}
 
 		go func() {
