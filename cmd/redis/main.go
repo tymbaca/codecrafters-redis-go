@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -10,6 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/codecrafters-io/redis-starter-go/pkg/assert"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
@@ -40,9 +42,14 @@ func Run() error {
 		}
 
 		go func() {
-			defer conn.Close()
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
 
-			err := handleConn(ctx, conn)
+			context.AfterFunc(ctx, func() {
+				_ = conn.Close()
+			})
+
+			err := handleConn(conn)
 			if err != nil {
 				slog.Error("handle conn failed", "err", err)
 			}
@@ -50,9 +57,9 @@ func Run() error {
 	}
 }
 
-func handleConn(ctx context.Context, conn io.ReadWriter) error {
+func handleConn(conn io.ReadWriter) error {
 	for {
-		command, ok, err := readCommand(ctx, conn)
+		command, ok, err := readCommand(conn)
 		if err != nil {
 			return err
 		}
@@ -61,23 +68,40 @@ func handleConn(ctx context.Context, conn io.ReadWriter) error {
 			return nil
 		}
 
-		err = handleCommand(ctx, conn, command)
+		err = handleCommand(conn, command)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func readCommand(ctx context.Context, conn io.Reader) (Command, bool, error) {
-	panic("not implemented")
+func readCommand(conn io.Reader) (enc.Value, bool, error) {
+	val, err := enc.ReadValue(conn)
+	if errors.Is(err, io.EOF) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+
+	return val, true, nil
 }
 
-func readArray(ctx context.Context, conn io.Reader) enc.Array {
+func handleCommand(conn io.Writer, command enc.Value) error {
+	if command.Type() != enc.TypeArray {
+		return fmt.Errorf("exected array, got: %s (of type %s)", command.String(), command.Type())
+	}
+
+	arr := command.(enc.Array)
+	assert.True(len(arr) > 1)
+	assert.True(arr[0].Type() == enc.TypeBulkString)
+
+	commandStr := arr[0].(enc.BulkString)
+
+	if commandStr == "PING" {
+		responseVal := enc.SimpleString("PONG")
+		return responseVal.Encode(conn)
+	}
+
 	panic("not implemented")
 }
-
-func handleCommand(ctx context.Context, conn io.Reader, command Command) error {
-	panic("not implemented")
-}
-
-type Command struct{}

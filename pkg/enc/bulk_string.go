@@ -8,8 +8,8 @@ import (
 
 type BulkString string
 
-func (bs BulkString) Type() ValueType {
-	return ValueTypeBulkString
+func (bs BulkString) Type() Type {
+	return TypeBulkString
 }
 
 func (bs BulkString) String() string {

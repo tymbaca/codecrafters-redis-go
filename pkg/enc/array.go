@@ -8,8 +8,8 @@ import (
 
 type Array []Value
 
-func (a Array) Type() ValueType {
-	return ValueTypeArray
+func (a Array) Type() Type {
+	return TypeArray
 }
 
 func (a Array) String() string {

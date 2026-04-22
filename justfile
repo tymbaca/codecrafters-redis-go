@@ -1,5 +1,5 @@
-test:
-    go test ./...
-     
 submit:
     codecrafters submit
+     
+test:
+    go test ./...

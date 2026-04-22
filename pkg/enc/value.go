@@ -3,15 +3,15 @@ package enc
 import "io"
 
 type Value interface {
-	Type() ValueType
+	Type() Type
 	String() string
 	Encode(w io.Writer) error
 }
 
-type ValueType string
+type Type string
 
 const (
-	ValueTypeArray        = "array"
-	ValueTypeSimpleString = "simple_string"
-	ValueTypeBulkString   = "bulk_string"
+	TypeArray        = "array"
+	TypeSimpleString = "simple_string"
+	TypeBulkString   = "bulk_string"
 )

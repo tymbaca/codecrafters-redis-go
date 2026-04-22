@@ -7,8 +7,8 @@ import (
 
 type SimpleString string
 
-func (ss SimpleString) Type() ValueType {
-	return ValueTypeSimpleString
+func (ss SimpleString) Type() Type {
+	return TypeSimpleString
 }
 
 func (ss SimpleString) String() string {
