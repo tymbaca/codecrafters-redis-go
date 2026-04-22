@@ -117,8 +117,8 @@ func handleCommand(conn io.Writer, storage *Storage, command enc.Value) error {
 			return fmt.Errorf("invalid ECHO command: must be 2 elements, got: %#v", arr)
 		}
 
-		responseVal := arr[1]
-		return responseVal.Encode(conn)
+		reply := arr[1]
+		return reply.Encode(conn)
 
 	case "SET":
 		if len(arr) != 3 {
@@ -134,6 +134,25 @@ func handleCommand(conn io.Writer, storage *Storage, command enc.Value) error {
 
 		storage.Set(key, val)
 		return replyOK(conn)
+
+	case "GET":
+		if len(arr) != 2 {
+			return fmt.Errorf("invalid GET command: must be 2 elements, got: %#v", arr)
+		}
+
+		if arr[1].Type() != enc.TypeBulkString {
+			return fmt.Errorf("invalid GET command: keymust be a bulk string, got: %#v", arr)
+		}
+
+		key := arr[1].(enc.BulkString).Val
+		val, ok := storage.Get(key)
+
+		reply := enc.BulkString{Val: val.(enc.BulkString).Val}
+		if !ok {
+			reply.Null = true
+		}
+
+		return reply.Encode(conn)
 
 	default:
 		return fmt.Errorf("command not implemented: %s", commandStr)
