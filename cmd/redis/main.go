@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
 func Run() error {
@@ -67,6 +69,10 @@ func handleConn(ctx context.Context, conn io.ReadWriter) error {
 }
 
 func readCommand(ctx context.Context, conn io.Reader) (Command, bool, error) {
+	panic("not implemented")
+}
+
+func readArray(ctx context.Context, conn io.Reader) enc.Array {
 	panic("not implemented")
 }
 
