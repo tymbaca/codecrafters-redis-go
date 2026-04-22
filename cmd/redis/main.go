@@ -87,7 +87,7 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 	return val, true, nil
 }
 
-func handleCommand(conn io.Writer, command enc.Value) error {
+func handleCommand(storage Storage, conn io.Writer, command enc.Value) error {
 	if command.Type() != enc.TypeArray {
 		return fmt.Errorf("exected array, got: %s (of type %s)", command.String(), command.Type())
 	}
@@ -98,10 +98,11 @@ func handleCommand(conn io.Writer, command enc.Value) error {
 
 	commandStr := arr[0].(enc.BulkString)
 
-	switch commandStr {
+	switch commandStr.Val {
 	case "PING":
 		responseVal := enc.SimpleString("PONG")
 		return responseVal.Encode(conn)
+
 	case "ECHO":
 		if len(arr) != 2 {
 			return fmt.Errorf("invalid ECHO command: must be 2 elements, got: %#v", arr)
@@ -109,7 +110,41 @@ func handleCommand(conn io.Writer, command enc.Value) error {
 
 		responseVal := arr[1]
 		return responseVal.Encode(conn)
+
+	case "SET":
+		if len(arr) != 3 {
+			return fmt.Errorf("invalid SET command: must be 3 elements, got: %#v", arr)
+		}
+
+		if arr[1].Type() != enc.TypeBulkString || arr[2].Type() != enc.TypeBulkString {
+			return fmt.Errorf("invalid SET command: key and value must be bulk strings, got: %#v", arr)
+		}
+
+		key := arr[1].(enc.BulkString).Val
+		val := arr[2]
+
+		storage.Set(key, val)
+		return replyOK(conn)
+
 	default:
 		return fmt.Errorf("command not implemented: %s", commandStr)
 	}
+}
+
+func replyOK(w io.Writer) error {
+	responseVal := enc.SimpleString("OK")
+	return responseVal.Encode(w)
+}
+
+type Storage struct {
+	data map[string]enc.Value
+}
+
+func (s *Storage) Get(key string) (enc.Value, bool) {
+	val, ok := s.data[key]
+	return val, ok
+}
+
+func (s *Storage) Set(key string, val enc.Value) {
+	s.data[key] = val
 }

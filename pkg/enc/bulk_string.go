@@ -6,20 +6,32 @@ import (
 	"io"
 )
 
-type BulkString string
+type BulkString struct {
+	Val  string
+	Null bool
+}
 
 func (bs BulkString) Type() Type {
 	return TypeBulkString
 }
 
 func (bs BulkString) String() string {
-	return string(bs)
+	if bs.Null {
+		return "<null>"
+	}
+	return bs.Val
 }
 
 func (bs BulkString) Encode(w io.Writer) error {
 	buf := bytes.NewBuffer(nil)
-	fmt.Fprintf(buf, "$%d\r\n", len(bs))
-	buf.WriteString(string(bs))
+
+	length := len(bs.Val)
+	if bs.Null {
+		length = -1
+	}
+
+	fmt.Fprintf(buf, "$%d\r\n", length)
+	buf.WriteString(bs.Val)
 
 	_, err := w.Write(buf.Bytes())
 	if err != nil {
