@@ -1,0 +1,2 @@
+submit:
+    codecrafters submit
