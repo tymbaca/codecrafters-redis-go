@@ -93,7 +93,7 @@ func handleCommand(conn io.Writer, command enc.Value) error {
 	}
 
 	arr := command.(enc.Array)
-	assert.True(len(arr) > 1)
+	assert.True(len(arr) > 0)
 	assert.True(arr[0].Type() == enc.TypeBulkString)
 
 	commandStr := arr[0].(enc.BulkString)
