@@ -29,3 +29,7 @@ func (bs BulkString) Encode(w io.Writer) error {
 	_, err = w.Write([]byte("\r\n"))
 	return err
 }
+
+func readBulkString(r io.Reader) (Value, error) {
+	panic("unimplemented")
+}

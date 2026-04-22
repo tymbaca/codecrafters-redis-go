@@ -43,3 +43,22 @@ func (a Array) Encode(w io.Writer) error {
 
 	return nil
 }
+
+func readArray(r io.Reader) (Array, error) {
+	num, err := readNumber(r)
+	if err != nil {
+		return nil, fmt.Errorf("read array length: %w", err)
+	}
+
+	array := make(Array, 0, num)
+	for i := range num {
+		val, err := ReadValue(r)
+		if err != nil {
+			return nil, fmt.Errorf("read elem %d in array: %w", i, err)
+		}
+
+		array = append(array, val)
+	}
+
+	return array, nil
+}

@@ -10,7 +10,10 @@ import (
 func TestArray(t *testing.T) {
 	a := Array{
 		BulkString("hello"),
-		BulkString("world"),
+		SimpleString("world"),
+		Array{
+			BulkString("foo"),
+		},
 	}
 
 	buf := bytes.NewBuffer(nil)
@@ -18,5 +21,5 @@ func TestArray(t *testing.T) {
 	err := a.Encode(buf)
 	require.NoError(t, err)
 
-	require.Equal(t, []byte("*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n"), buf.Bytes())
+	require.Equal(t, []byte("*3\r\n$5\r\nhello\r\n+world\r\n*1\r\n$3\r\nfoo\r\n"), buf.Bytes())
 }
