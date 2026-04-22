@@ -26,5 +26,18 @@ func (ss SimpleString) Encode(w io.Writer) error {
 }
 
 func readSimpleString(r io.Reader) (Value, error) {
-	panic("unimplemented")
+	buf := bytes.NewBuffer(nil)
+
+	for {
+		b, err := readByte(r)
+		if err != nil {
+			return nil, err
+		}
+
+		if b == '\r' {
+			return SimpleString(buf.String()), finishCRLF(r)
+		}
+
+		buf.WriteByte(b)
+	}
 }

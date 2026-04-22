@@ -31,5 +31,30 @@ func (bs BulkString) Encode(w io.Writer) error {
 }
 
 func readBulkString(r io.Reader) (Value, error) {
-	panic("unimplemented")
+	length, err := readNumber(r)
+	if err != nil {
+		return nil, err
+	}
+
+	buf := make([]byte, length)
+	_, err = io.ReadFull(r, buf)
+	if err != nil {
+		return nil, err
+	}
+
+	cr, err := readByte(r)
+	if err != nil {
+		return nil, err
+	}
+
+	lf, err := readByte(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if cr != '\r' || lf != '\n' {
+		return nil, fmt.Errorf("bad CRLF: %w", err)
+	}
+
+	return BulkString(buf), nil
 }

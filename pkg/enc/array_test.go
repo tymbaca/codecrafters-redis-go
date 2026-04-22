@@ -22,4 +22,14 @@ func TestArray(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, []byte("*3\r\n$5\r\nhello\r\n+world\r\n*1\r\n$3\r\nfoo\r\n"), buf.Bytes())
+
+	parsedVal, err := ReadValue(buf)
+	require.NoError(t, err)
+	require.Equal(t, Array{
+		BulkString("hello"),
+		SimpleString("world"),
+		Array{
+			BulkString("foo"),
+		},
+	}, parsedVal)
 }

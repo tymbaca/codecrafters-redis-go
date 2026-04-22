@@ -51,13 +51,9 @@ func readNumber(r io.Reader) (int, error) {
 		if unicode.IsDigit(rune(b)) {
 			digits = append(digits, b)
 		} else if b == '\r' {
-			b, err := readByte(r)
+			err := finishCRLF(r)
 			if err != nil {
-				return 0, fmt.Errorf("read CRLF: %w", err)
-			}
-
-			if b != '\n' {
-				return 0, fmt.Errorf("read CRLF: no \\n character")
+				return 0, err
 			}
 
 			num, err := strconv.Atoi(string(digits))
@@ -70,6 +66,19 @@ func readNumber(r io.Reader) (int, error) {
 			return 0, fmt.Errorf("invalid character '%c', expected number", first)
 		}
 	}
+}
+
+func finishCRLF(r io.Reader) error {
+	b, err := readByte(r)
+	if err != nil {
+		return fmt.Errorf("read CRLF: %w", err)
+	}
+
+	if b != '\n' {
+		return fmt.Errorf("read CRLF: no \\n character")
+	}
+
+	return nil
 }
 
 func readByte(r io.Reader) (byte, error) {
