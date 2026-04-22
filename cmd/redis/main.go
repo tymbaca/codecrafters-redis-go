@@ -98,10 +98,18 @@ func handleCommand(conn io.Writer, command enc.Value) error {
 
 	commandStr := arr[0].(enc.BulkString)
 
-	if commandStr == "PING" {
+	switch commandStr {
+	case "PING":
 		responseVal := enc.SimpleString("PONG")
 		return responseVal.Encode(conn)
-	}
+	case "ECHO":
+		if len(arr) != 2 {
+			return fmt.Errorf("invalid ECHO command: must be 2 elements, got: %#v", arr)
+		}
 
-	panic("not implemented")
+		responseVal := arr[1]
+		return responseVal.Encode(conn)
+	default:
+		return fmt.Errorf("command not implemented: %s", commandStr)
+	}
 }
