@@ -1,4 +1,4 @@
-package main
+package redis
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-func main() {
+func Run() error {
 	ctx := context.Background()
 	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
