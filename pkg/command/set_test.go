@@ -25,19 +25,25 @@ func TestParseSet(t *testing.T) {
 		{
 			name:    "EX",
 			args:    []string{"k1", "v1", "EX", "10"},
-			want:    command.Set{Key: "k1", Val: "v1", Expire: 10 * time.Second},
+			want:    command.Set{Key: "k1", Val: "v1", ExpireSet: true, Expire: 10 * time.Second},
 			wantErr: false,
 		},
 		{
 			name:    "PX",
 			args:    []string{"k1", "v1", "PX", "1000"},
-			want:    command.Set{Key: "k1", Val: "v1", Expire: 1000 * time.Millisecond},
+			want:    command.Set{Key: "k1", Val: "v1", ExpireSet: true, Expire: 1000 * time.Millisecond},
 			wantErr: false,
 		},
 		{
 			name:    "NX",
 			args:    []string{"k1", "v1", "NX", "PX", "1000"},
-			want:    command.Set{Key: "k1", Val: "v1", NX: true, Expire: 1000 * time.Millisecond},
+			want:    command.Set{Key: "k1", Val: "v1", Exists: command.ExistsKindNX, ExpireSet: true, Expire: 1000 * time.Millisecond},
+			wantErr: false,
+		},
+		{
+			name:    "XX",
+			args:    []string{"k1", "v1", "XX", "PX", "1000"},
+			want:    command.Set{Key: "k1", Val: "v1", Exists: command.ExistsKindXX, ExpireSet: true, Expire: 1000 * time.Millisecond},
 			wantErr: false,
 		},
 	}

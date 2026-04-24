@@ -130,9 +130,20 @@ func handleCommand(ctx context.Context, conn io.Writer, storage *storage.Storage
 			return fmt.Errorf("parse SET: %w", err)
 		}
 
-		err = storage.Set(ctx, cmd)
+		old, setOk, err := storage.Set(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("exec SET: %w", err)
+		}
+
+		if cmd.GetOld {
+			oldVal, oldSet := old.Get()
+			reply := enc.BulkString{Val: oldVal, Null: !oldSet}
+			return reply.Encode(conn)
+		}
+
+		if !setOk {
+			reply := enc.BulkString{Null: true}
+			return reply.Encode(conn)
 		}
 
 		return replyOK(conn)

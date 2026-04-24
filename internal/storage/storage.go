@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
+	"github.com/codecrafters-io/redis-starter-go/pkg/option"
 )
 
 func New() *Storage {
@@ -41,9 +42,19 @@ func (s *Storage) Get(ctx context.Context, cmd command.Get) (string, bool, error
 	return entry.val, true, nil
 }
 
-func (s *Storage) Set(ctx context.Context, cmd command.Set) (string, bool, error) {
+func (s *Storage) Set(ctx context.Context, cmd command.Set) (option.Value[string], bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	oldValue, exists := s.data[cmd.Key]
+	oldValueOption := option.Wrap(oldValue.val, exists)
+
+	if cmd.Exists == command.ExistsKindXX && !exists {
+		return oldValueOption, false, nil
+	}
+	if cmd.Exists == command.ExistsKindNX && exists {
+		return oldValueOption, false, nil
+	}
 
 	s.data[cmd.Key] = entry{
 		val:       cmd.Val,
@@ -51,5 +62,5 @@ func (s *Storage) Set(ctx context.Context, cmd command.Set) (string, bool, error
 		expire:    cmd.Time.Add(cmd.Expire),
 	}
 
-	return "", true, nil
+	return oldValueOption, true, nil
 }

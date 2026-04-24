@@ -15,6 +15,7 @@ type Set struct {
 	Exists    ExistsKind
 	ExpireSet bool
 	Expire    time.Duration
+	GetOld    bool
 	Time      time.Time
 }
 
@@ -83,6 +84,8 @@ func ParseSet(args []string) (Set, error) {
 		case "XX":
 			cmd.Exists = ExistsKindXX
 
+		case "GET":
+			cmd.GetOld = true
 		}
 	}
 
