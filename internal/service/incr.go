@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Service) Incr(ctx context.Context, cmd command.Incr) (enc.Value, error) {
-	valStr, set, err := s.get(ctx, command.Get{Key: cmd.Key, Time: cmd.Time})
+	valStr, set, err := s.get(ctx, command.Get(cmd))
 	if err != nil {
 		return nil, err
 	}
