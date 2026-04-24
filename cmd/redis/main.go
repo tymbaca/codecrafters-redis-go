@@ -92,7 +92,7 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 	return val, true, nil
 }
 
-func handleCommand(ctx context.Context, conn io.Writer, service *service.Service, commandVal enc.Value) error {
+func handleCommand(ctx context.Context, conn io.Writer, svc *service.Service, commandVal enc.Value) error {
 	if commandVal.Type() != enc.TypeArray {
 		return fmt.Errorf("exected array, got: %s (of type %s)", commandVal.String(), commandVal.Type())
 	}
@@ -130,7 +130,7 @@ func handleCommand(ctx context.Context, conn io.Writer, service *service.Service
 			return replyError(conn, fmt.Errorf("parse GET: %w", err))
 		}
 
-		reply, err := service.Get(ctx, cmd)
+		reply, err := svc.Get(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("exec GET: %w", err)
 		}
@@ -147,7 +147,7 @@ func handleCommand(ctx context.Context, conn io.Writer, service *service.Service
 			return replyError(conn, fmt.Errorf("parse SET: %w", err))
 		}
 
-		reply, err := service.Set(ctx, cmd)
+		reply, err := svc.Set(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("exec SET: %w", err)
 		}
@@ -164,7 +164,7 @@ func handleCommand(ctx context.Context, conn io.Writer, service *service.Service
 			return replyError(conn, fmt.Errorf("parse INCR: %w", err))
 		}
 
-		reply, err := service.Incr(ctx, cmd)
+		reply, err := svc.Incr(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("exec INCR: %w", err)
 		}
@@ -173,6 +173,9 @@ func handleCommand(ctx context.Context, conn io.Writer, service *service.Service
 
 	case "MULTI":
 		return enc.OK.Encode(conn)
+
+	case "EXEC":
+		return replyError(conn, service.ErrExecWithoutMulti)
 
 	default:
 		return fmt.Errorf("command not implemented: %s", commandStr)
