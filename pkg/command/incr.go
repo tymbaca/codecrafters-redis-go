@@ -10,7 +10,7 @@ type Incr struct {
 	Time time.Time
 }
 
-func (in *Incr) isCommand() {}
+func (in Incr) isCommand() {}
 
 func ParseIncr(args []string) (Incr, error) {
 	if len(args) < 1 {

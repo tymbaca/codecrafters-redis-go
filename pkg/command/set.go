@@ -19,7 +19,7 @@ type Set struct {
 	Time      time.Time
 }
 
-func (se *Set) isCommand() {}
+func (se Set) isCommand() {}
 
 type ExistsKind int
 

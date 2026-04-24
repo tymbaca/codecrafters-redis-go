@@ -1,8 +1,11 @@
 package service
 
 import (
+	"context"
 	"sync"
 	"time"
+
+	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 )
 
 func New() *Service {
@@ -14,11 +17,11 @@ func New() *Service {
 type Service struct {
 	mu   sync.RWMutex
 	data map[string]entry
-	wal 
+	wal  wal
 }
 
 type wal interface {
-	Append(ctx context.Context, cmds [])
+	Append(ctx context.Context, cmds ...command.Command) error
 }
 
 type entry struct {
