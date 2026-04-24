@@ -31,14 +31,16 @@ func (bs BulkString) Encode(w io.Writer) error {
 	}
 
 	fmt.Fprintf(buf, "$%d\r\n", length)
-	buf.WriteString(bs.Val)
+	if length >= 0 {
+		buf.WriteString(bs.Val)
+		buf.WriteString("\r\n")
+	}
 
 	_, err := w.Write(buf.Bytes())
 	if err != nil {
 		return err
 	}
 
-	_, err = w.Write([]byte("\r\n"))
 	return err
 }
 

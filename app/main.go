@@ -1,7 +1,13 @@
 package main
 
-import "github.com/codecrafters-io/redis-starter-go/cmd/redis"
+import (
+	"log"
+
+	"github.com/codecrafters-io/redis-starter-go/cmd/redis"
+)
 
 func main() {
-	redis.Run()
+	if err := redis.Run(); err != nil {
+		log.Fatal(err)
+	}
 }

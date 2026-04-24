@@ -9,10 +9,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
-	"time"
 
+	"github.com/codecrafters-io/redis-starter-go/internal/storage"
 	"github.com/codecrafters-io/redis-starter-go/pkg/assert"
+	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
@@ -21,24 +23,18 @@ func Run() error {
 	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	go func() {
-		<-time.After(2 * time.Second)
-		cancel()
-	}()
-
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
 	}
 
-	context.AfterFunc(ctx, func() {
+	cancelAfter := context.AfterFunc(ctx, func() {
 		_ = l.Close()
 	})
+	defer cancelAfter()
 
-	storage := &Storage{
-		data: make(map[string]enc.Value),
-	}
+	storage := storage.New()
 
 	for {
 		conn, err := l.Accept()
@@ -58,7 +54,7 @@ func Run() error {
 				_ = conn.Close()
 			})
 
-			err := handleConn(conn, storage)
+			err := handleConn(ctx, conn, storage)
 			if err != nil {
 				slog.Error("handle conn failed", "err", err)
 			}
@@ -66,7 +62,7 @@ func Run() error {
 	}
 }
 
-func handleConn(conn io.ReadWriter, storage *Storage) error {
+func handleConn(ctx context.Context, conn io.ReadWriter, storage *storage.Storage) error {
 	for {
 		command, ok, err := readCommand(conn)
 		if err != nil {
@@ -77,7 +73,7 @@ func handleConn(conn io.ReadWriter, storage *Storage) error {
 			return nil
 		}
 
-		err = handleCommand(conn, storage, command)
+		err = handleCommand(ctx, conn, storage, command)
 		if err != nil {
 			return err
 		}
@@ -96,62 +92,67 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 	return val, true, nil
 }
 
-func handleCommand(conn io.Writer, storage *Storage, command enc.Value) error {
-	if command.Type() != enc.TypeArray {
-		return fmt.Errorf("exected array, got: %s (of type %s)", command.String(), command.Type())
+func handleCommand(ctx context.Context, conn io.Writer, storage *storage.Storage, commandVal enc.Value) error {
+	if commandVal.Type() != enc.TypeArray {
+		return fmt.Errorf("exected array, got: %s (of type %s)", commandVal.String(), commandVal.Type())
 	}
 
-	arr := command.(enc.Array)
+	arr := commandVal.(enc.Array)
 	assert.True(len(arr) > 0)
 	assert.True(arr[0].Type() == enc.TypeBulkString)
-
 	commandStr := arr[0].(enc.BulkString)
 
-	switch commandStr.Val {
+	args, err := argsToString(arr[1:])
+	if err != nil {
+		return fmt.Errorf("parse command args (%#v): %w", arr, err)
+	}
+
+	switch strings.ToUpper(commandStr.Val) {
 	case "PING":
 		responseVal := enc.SimpleString("PONG")
 		return responseVal.Encode(conn)
 
 	case "ECHO":
 		if len(arr) != 2 {
-			return fmt.Errorf("invalid ECHO command: must be 2 elements, got: %#v", arr)
+			return fmt.Errorf("invalid ECHO command: must be 1 arg, got: %#v", args)
 		}
 
 		reply := arr[1]
 		return reply.Encode(conn)
 
 	case "SET":
-		if len(arr) != 3 {
-			return fmt.Errorf("invalid SET command: must be 3 elements, got: %#v", arr)
+		if len(args) < 2 {
+			return fmt.Errorf("invalid SET command: must be 3 or more args, got: %#v", args)
 		}
 
-		if arr[1].Type() != enc.TypeBulkString || arr[2].Type() != enc.TypeBulkString {
-			return fmt.Errorf("invalid SET command: key and value must be bulk strings, got: %#v", arr)
+		cmd, err := command.ParseSet(args)
+		if err != nil {
+			return fmt.Errorf("parse SET: %w", err)
 		}
 
-		key := arr[1].(enc.BulkString).Val
-		val := arr[2]
+		err = storage.Set(ctx, cmd)
+		if err != nil {
+			return fmt.Errorf("exec SET: %w", err)
+		}
 
-		storage.Set(key, val)
 		return replyOK(conn)
 
 	case "GET":
-		if len(arr) != 2 {
-			return fmt.Errorf("invalid GET command: must be 2 elements, got: %#v", arr)
+		if len(args) < 1 {
+			return fmt.Errorf("invalid GET command: must be 1 or more args, got: %#v", args)
 		}
 
-		if arr[1].Type() != enc.TypeBulkString {
-			return fmt.Errorf("invalid GET command: keymust be a bulk string, got: %#v", arr)
+		cmd, err := command.ParseGet(args)
+		if err != nil {
+			return fmt.Errorf("parse GET: %w", err)
 		}
 
-		key := arr[1].(enc.BulkString).Val
-		val, ok := storage.Get(key)
-
-		reply := enc.BulkString{Val: val.(enc.BulkString).Val}
-		if !ok {
-			reply.Null = true
+		val, set, err := storage.Get(ctx, cmd)
+		if err != nil {
+			return fmt.Errorf("exec GET: %w", err)
 		}
 
+		reply := enc.BulkString{Val: val, Null: !set}
 		return reply.Encode(conn)
 
 	default:
@@ -159,20 +160,21 @@ func handleCommand(conn io.Writer, storage *Storage, command enc.Value) error {
 	}
 }
 
+func argsToString(array enc.Array) ([]string, error) {
+	res := make([]string, 0, len(array))
+	for _, el := range array {
+		bs, ok := el.(enc.BulkString)
+		if !ok {
+			return nil, fmt.Errorf("got non-bulk-string in request arguments: %#v", el)
+		}
+
+		res = append(res, bs.Val)
+	}
+
+	return res, nil
+}
+
 func replyOK(w io.Writer) error {
 	responseVal := enc.SimpleString("OK")
 	return responseVal.Encode(w)
-}
-
-type Storage struct {
-	data map[string]enc.Value
-}
-
-func (s *Storage) Get(key string) (enc.Value, bool) {
-	val, ok := s.data[key]
-	return val, ok
-}
-
-func (s *Storage) Set(key string, val enc.Value) {
-	s.data[key] = val
 }
