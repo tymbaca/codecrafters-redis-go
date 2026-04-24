@@ -12,11 +12,19 @@ import (
 type Set struct {
 	Key       string
 	Val       string
-	NX        bool
+	Exists    ExistsKind
 	ExpireSet bool
 	Expire    time.Duration
 	Time      time.Time
 }
+
+type ExistsKind int
+
+const (
+	ExistsKindNone ExistsKind = iota
+	ExistsKindNX              // if not exists
+	ExistsKindXX              // if exists
+)
 
 func ParseSet(args []string) (Set, error) {
 	cmd := Set{}
@@ -71,7 +79,10 @@ func ParseSet(args []string) (Set, error) {
 			cmd.Expire = time.Duration(ms) * time.Millisecond
 
 		case "NX":
-			cmd.NX = true
+			cmd.Exists = ExistsKindNX
+		case "XX":
+			cmd.Exists = ExistsKindXX
+
 		}
 	}
 

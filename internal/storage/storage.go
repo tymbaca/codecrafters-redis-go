@@ -41,7 +41,7 @@ func (s *Storage) Get(ctx context.Context, cmd command.Get) (string, bool, error
 	return entry.val, true, nil
 }
 
-func (s *Storage) Set(ctx context.Context, cmd command.Set) error {
+func (s *Storage) Set(ctx context.Context, cmd command.Set) (string, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -51,5 +51,5 @@ func (s *Storage) Set(ctx context.Context, cmd command.Set) error {
 		expire:    cmd.Time.Add(cmd.Expire),
 	}
 
-	return nil
+	return "", true, nil
 }
