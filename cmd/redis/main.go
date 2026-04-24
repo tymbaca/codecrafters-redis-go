@@ -120,6 +120,23 @@ func handleCommand(ctx context.Context, conn io.Writer, service *service.Service
 		reply := arr[1]
 		return reply.Encode(conn)
 
+	case "GET":
+		if len(args) < 1 {
+			return fmt.Errorf("invalid GET command: must be 1 or more args, got: %#v", args)
+		}
+
+		cmd, err := command.ParseGet(args)
+		if err != nil {
+			return replyError(conn, fmt.Errorf("parse GET: %w", err))
+		}
+
+		reply, err := service.Get(ctx, cmd)
+		if err != nil {
+			return fmt.Errorf("exec GET: %w", err)
+		}
+
+		return reply.Encode(conn)
+
 	case "SET":
 		if len(args) < 2 {
 			return fmt.Errorf("invalid SET command: must be 3 or more args, got: %#v", args)
@@ -137,19 +154,19 @@ func handleCommand(ctx context.Context, conn io.Writer, service *service.Service
 
 		return reply.Encode(conn)
 
-	case "GET":
+	case "INCR":
 		if len(args) < 1 {
-			return fmt.Errorf("invalid GET command: must be 1 or more args, got: %#v", args)
+			return fmt.Errorf("invalid INCR command: must be 1 arg, got: %#v", args)
 		}
 
-		cmd, err := command.ParseGet(args)
+		cmd, err := command.ParseIncr(args)
 		if err != nil {
-			return replyError(conn, fmt.Errorf("parse GET: %w", err))
+			return replyError(conn, fmt.Errorf("parse INCR: %w", err))
 		}
 
-		reply, err := service.Get(ctx, cmd)
+		reply, err := service.Incr(ctx, cmd)
 		if err != nil {
-			return fmt.Errorf("exec GET: %w", err)
+			return fmt.Errorf("exec INCR: %w", err)
 		}
 
 		return reply.Encode(conn)
