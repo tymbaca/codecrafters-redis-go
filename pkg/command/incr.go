@@ -10,6 +10,8 @@ type Incr struct {
 	Time time.Time
 }
 
+func (in *Incr) isCommand() {}
+
 func ParseIncr(args []string) (Incr, error) {
 	if len(args) < 1 {
 		return Incr{}, fmt.Errorf("INCR must have a key")

@@ -14,6 +14,11 @@ func New() *Service {
 type Service struct {
 	mu   sync.RWMutex
 	data map[string]entry
+	wal 
+}
+
+type wal interface {
+	Append(ctx context.Context, cmds [])
 }
 
 type entry struct {

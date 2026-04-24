@@ -12,6 +12,8 @@ type Get struct {
 	Time time.Time
 }
 
+func (ge *Get) isCommand() {}
+
 func ParseGet(args []string) (Get, error) {
 	cmd := Get{}
 	cmd.Time = time.Now()

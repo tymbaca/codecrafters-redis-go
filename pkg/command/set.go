@@ -19,6 +19,8 @@ type Set struct {
 	Time      time.Time
 }
 
+func (se *Set) isCommand() {}
+
 type ExistsKind int
 
 const (

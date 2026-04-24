@@ -171,6 +171,9 @@ func handleCommand(ctx context.Context, conn io.Writer, service *service.Service
 
 		return reply.Encode(conn)
 
+	case "MULTI":
+		return enc.OK.Encode(conn)
+
 	default:
 		return fmt.Errorf("command not implemented: %s", commandStr)
 	}
