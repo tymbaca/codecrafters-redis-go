@@ -11,6 +11,7 @@ import (
 func New() *Service {
 	return &Service{
 		data: make(map[string]entry),
+		wal:  noopWal{},
 	}
 }
 
@@ -23,6 +24,10 @@ type Service struct {
 type wal interface {
 	Append(ctx context.Context, cmds ...command.Command) error
 }
+
+type noopWal struct{}
+
+func (w noopWal) Append(ctx context.Context, cmds ...command.Command) error { return nil }
 
 type entry struct {
 	val       string
