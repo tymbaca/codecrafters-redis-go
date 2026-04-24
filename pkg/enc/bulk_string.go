@@ -44,7 +44,7 @@ func (bs BulkString) Encode(w io.Writer) error {
 	return err
 }
 
-func readBulkString(r io.Reader) (Value, error) {
+func decodeBulkString(r io.Reader) (Value, error) {
 	length, err := readNumber(r)
 	if err != nil {
 		return nil, err

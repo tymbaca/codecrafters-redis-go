@@ -12,7 +12,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/storage"
+	"github.com/codecrafters-io/redis-starter-go/internal/service"
 	"github.com/codecrafters-io/redis-starter-go/pkg/assert"
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
@@ -34,7 +34,7 @@ func Run() error {
 	})
 	defer cancelAfter()
 
-	storage := storage.New()
+	service := service.New()
 
 	for {
 		conn, err := l.Accept()
@@ -54,7 +54,7 @@ func Run() error {
 				_ = conn.Close()
 			})
 
-			err := handleConn(ctx, conn, storage)
+			err := handleConn(ctx, conn, service)
 			if err != nil {
 				slog.Error("handle conn failed", "err", err)
 			}
@@ -62,7 +62,7 @@ func Run() error {
 	}
 }
 
-func handleConn(ctx context.Context, conn io.ReadWriter, storage *storage.Storage) error {
+func handleConn(ctx context.Context, conn io.ReadWriter, service *service.Service) error {
 	for {
 		command, ok, err := readCommand(conn)
 		if err != nil {
@@ -73,7 +73,7 @@ func handleConn(ctx context.Context, conn io.ReadWriter, storage *storage.Storag
 			return nil
 		}
 
-		err = handleCommand(ctx, conn, storage, command)
+		err = handleCommand(ctx, conn, service, command)
 		if err != nil {
 			return err
 		}
@@ -81,7 +81,7 @@ func handleConn(ctx context.Context, conn io.ReadWriter, storage *storage.Storag
 }
 
 func readCommand(conn io.Reader) (enc.Value, bool, error) {
-	val, err := enc.ReadValue(conn)
+	val, err := enc.Decode(conn)
 	if errors.Is(err, io.EOF) {
 		return nil, false, nil
 	}
@@ -92,7 +92,7 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 	return val, true, nil
 }
 
-func handleCommand(ctx context.Context, conn io.Writer, storage *storage.Storage, commandVal enc.Value) error {
+func handleCommand(ctx context.Context, conn io.Writer, service *service.Service, commandVal enc.Value) error {
 	if commandVal.Type() != enc.TypeArray {
 		return fmt.Errorf("exected array, got: %s (of type %s)", commandVal.String(), commandVal.Type())
 	}
@@ -127,26 +127,15 @@ func handleCommand(ctx context.Context, conn io.Writer, storage *storage.Storage
 
 		cmd, err := command.ParseSet(args)
 		if err != nil {
-			return fmt.Errorf("parse SET: %w", err)
+			return replyError(conn, fmt.Errorf("parse SET: %w", err))
 		}
 
-		old, setOk, err := storage.Set(ctx, cmd)
+		reply, err := service.Set(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("exec SET: %w", err)
 		}
 
-		if cmd.GetOld {
-			oldVal, oldSet := old.Get()
-			reply := enc.BulkString{Val: oldVal, Null: !oldSet}
-			return reply.Encode(conn)
-		}
-
-		if !setOk {
-			reply := enc.BulkString{Null: true}
-			return reply.Encode(conn)
-		}
-
-		return replyOK(conn)
+		return reply.Encode(conn)
 
 	case "GET":
 		if len(args) < 1 {
@@ -155,15 +144,14 @@ func handleCommand(ctx context.Context, conn io.Writer, storage *storage.Storage
 
 		cmd, err := command.ParseGet(args)
 		if err != nil {
-			return fmt.Errorf("parse GET: %w", err)
+			return replyError(conn, fmt.Errorf("parse GET: %w", err))
 		}
 
-		val, set, err := storage.Get(ctx, cmd)
+		reply, err := service.Get(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("exec GET: %w", err)
 		}
 
-		reply := enc.BulkString{Val: val, Null: !set}
 		return reply.Encode(conn)
 
 	default:
@@ -185,7 +173,8 @@ func argsToString(array enc.Array) ([]string, error) {
 	return res, nil
 }
 
-func replyOK(w io.Writer) error {
-	responseVal := enc.SimpleString("OK")
-	return responseVal.Encode(w)
+func replyError(conn io.Writer, err error) error {
+	reply := enc.SimpleError(err.Error())
+
+	return reply.Encode(conn)
 }

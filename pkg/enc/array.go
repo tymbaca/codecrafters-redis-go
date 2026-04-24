@@ -44,7 +44,7 @@ func (a Array) Encode(w io.Writer) error {
 	return nil
 }
 
-func readArray(r io.Reader) (Array, error) {
+func decodeArray(r io.Reader) (Array, error) {
 	num, err := readNumber(r)
 	if err != nil {
 		return nil, fmt.Errorf("read array length: %w", err)
@@ -52,7 +52,7 @@ func readArray(r io.Reader) (Array, error) {
 
 	array := make(Array, 0, num)
 	for i := range num {
-		val, err := ReadValue(r)
+		val, err := Decode(r)
 		if err != nil {
 			return nil, fmt.Errorf("read elem %d in array: %w", i, err)
 		}

@@ -11,7 +11,9 @@ type Value interface {
 type Type string
 
 const (
-	TypeArray        = "array"
-	TypeSimpleString = "simple_string"
-	TypeBulkString   = "bulk_string"
+	TypeArray        Type = "array"
+	TypeSimpleString Type = "simple_string"
+	TypeSimpleError  Type = "simple_error"
+	TypeBulkString   Type = "bulk_string"
+	TypeInteger      Type = "integer"
 )

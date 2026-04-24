@@ -5,21 +5,19 @@ import (
 	"io"
 )
 
-const OK = SimpleString("OK")
+type SimpleError string
 
-type SimpleString string
-
-func (ss SimpleString) Type() Type {
-	return TypeSimpleString
+func (ss SimpleError) Type() Type {
+	return TypeSimpleError
 }
 
-func (ss SimpleString) String() string {
+func (ss SimpleError) String() string {
 	return string(ss)
 }
 
-func (ss SimpleString) Encode(w io.Writer) error {
+func (ss SimpleError) Encode(w io.Writer) error {
 	buf := bytes.NewBuffer(nil)
-	buf.WriteString("+")
+	buf.WriteString("-")
 	buf.WriteString(string(ss))
 	buf.WriteString("\r\n")
 
@@ -27,7 +25,7 @@ func (ss SimpleString) Encode(w io.Writer) error {
 	return err
 }
 
-func decodeSimpleString(r io.Reader) (Value, error) {
+func decodeSimpleError(r io.Reader) (Value, error) {
 	buf := bytes.NewBuffer(nil)
 
 	for {
@@ -37,7 +35,7 @@ func decodeSimpleString(r io.Reader) (Value, error) {
 		}
 
 		if b == '\r' {
-			return SimpleString(buf.String()), finishCRLF(r)
+			return SimpleError(buf.String()), finishCRLF(r)
 		}
 
 		buf.WriteByte(b)

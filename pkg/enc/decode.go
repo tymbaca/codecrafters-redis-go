@@ -7,7 +7,7 @@ import (
 	"unicode"
 )
 
-func ReadValue(r io.Reader) (Value, error) {
+func Decode(r io.Reader) (Value, error) {
 	head, err := readByte(r)
 	if err != nil {
 		return nil, fmt.Errorf("read value header: %w", err)
@@ -15,11 +15,15 @@ func ReadValue(r io.Reader) (Value, error) {
 
 	switch head {
 	case '*':
-		return readArray(r)
+		return decodeArray(r)
 	case '$':
-		return readBulkString(r)
+		return decodeBulkString(r)
 	case '+':
-		return readSimpleString(r)
+		return decodeSimpleString(r)
+	case '-':
+		return decodeSimpleError(r)
+	case ':':
+		return decodeInteger(r)
 	}
 
 	return nil, fmt.Errorf("unsupported value header: %c", head)
@@ -36,6 +40,8 @@ func readNumber(r io.Reader) (int, error) {
 	sign := 1
 	if first == '-' {
 		sign = -1
+	} else if first == '+' {
+		sign = +1
 	} else if unicode.IsDigit(rune(first)) {
 		digits = append(digits, first)
 	} else {
