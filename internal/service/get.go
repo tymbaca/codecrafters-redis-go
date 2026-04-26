@@ -2,19 +2,15 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
 func (s *Service) Get(ctx context.Context, cmd command.Get) (enc.Value, error) {
-	if err := s.wal.Append(ctx, cmd); err != nil {
-		return nil, fmt.Errorf("append to WAL: %w", err)
-	}
-
-	if queued := s.txQueue(ctx, cmd); queued {
-		return enc.Queued, nil
+	pre, err := s.prelude(ctx, cmd, true)
+	if err != nil || pre != nil {
+		return pre, err
 	}
 
 	val, set, err := s.get(ctx, cmd)

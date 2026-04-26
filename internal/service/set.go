@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
@@ -10,8 +9,9 @@ import (
 )
 
 func (s *Service) Set(ctx context.Context, cmd command.Set) (enc.Value, error) {
-	if err := s.wal.Append(ctx, cmd); err != nil {
-		return nil, fmt.Errorf("append to WAL: %w", err)
+	pre, err := s.prelude(ctx, cmd, true)
+	if err != nil || pre != nil {
+		return pre, err
 	}
 
 	old, setOk, err := s.set(ctx, cmd)

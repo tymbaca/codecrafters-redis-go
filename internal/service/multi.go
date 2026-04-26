@@ -8,6 +8,11 @@ import (
 )
 
 func (s *Service) Multi(ctx context.Context, cmd command.Multi) (enc.Value, error) {
+	pre, err := s.prelude(ctx, cmd, false)
+	if err != nil || pre != nil {
+		return pre, err
+	}
+
 	s.txsMu.Lock()
 	defer s.txsMu.Unlock()
 

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
@@ -10,8 +9,9 @@ import (
 )
 
 func (s *Service) Incr(ctx context.Context, cmd command.Incr) (enc.Value, error) {
-	if err := s.wal.Append(ctx, cmd); err != nil {
-		return nil, fmt.Errorf("append to WAL: %w", err)
+	pre, err := s.prelude(ctx, cmd, true)
+	if err != nil || pre != nil {
+		return pre, err
 	}
 
 	valStr, set, err := s.get(ctx, command.Get(cmd))
