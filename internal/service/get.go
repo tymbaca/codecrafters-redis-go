@@ -13,6 +13,10 @@ func (s *Service) Get(ctx context.Context, cmd command.Get) (enc.Value, error) {
 		return nil, fmt.Errorf("append to WAL: %w", err)
 	}
 
+	if queued := s.txQueue(ctx, cmd); queued {
+		return enc.Queued, nil
+	}
+
 	val, set, err := s.get(ctx, cmd)
 	if err != nil {
 		return nil, err
@@ -23,8 +27,8 @@ func (s *Service) Get(ctx context.Context, cmd command.Get) (enc.Value, error) {
 }
 
 func (s *Service) get(ctx context.Context, cmd command.Get) (string, bool, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.dataMu.RLock()
+	defer s.dataMu.RUnlock()
 
 	entry, ok := s.data[cmd.Key]
 

@@ -16,6 +16,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/assert"
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
+	"github.com/google/uuid"
 )
 
 func Run() error {
@@ -62,7 +63,13 @@ func Run() error {
 	}
 }
 
-func handleConn(ctx context.Context, conn io.ReadWriter, service *service.Service) error {
+func handleConn(ctx context.Context, conn io.ReadWriter, svc *service.Service) error {
+	connCtx := command.Context{
+		ConnID: uuid.NewString(),
+	}
+
+	defer svc.Discard(ctx, command.Discard{Context: connCtx})
+
 	for {
 		command, ok, err := readCommand(conn)
 		if err != nil {
@@ -73,7 +80,7 @@ func handleConn(ctx context.Context, conn io.ReadWriter, service *service.Servic
 			return nil
 		}
 
-		err = handleCommand(ctx, conn, service, command)
+		err = handleCommand(ctx, conn, connCtx, svc, command)
 		if err != nil {
 			return err
 		}
@@ -92,7 +99,7 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 	return val, true, nil
 }
 
-func handleCommand(ctx context.Context, conn io.Writer, svc *service.Service, commandVal enc.Value) error {
+func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context, svc *service.Service, commandVal enc.Value) error {
 	if commandVal.Type() != enc.TypeArray {
 		return fmt.Errorf("exected array, got: %s (of type %s)", commandVal.String(), commandVal.Type())
 	}
@@ -125,7 +132,7 @@ func handleCommand(ctx context.Context, conn io.Writer, svc *service.Service, co
 			return fmt.Errorf("invalid GET command: must be 1 or more args, got: %#v", args)
 		}
 
-		cmd, err := command.ParseGet(args)
+		cmd, err := command.ParseGet(connCtx, args)
 		if err != nil {
 			return replyError(conn, fmt.Errorf("parse GET: %w", err))
 		}
@@ -142,7 +149,7 @@ func handleCommand(ctx context.Context, conn io.Writer, svc *service.Service, co
 			return fmt.Errorf("invalid SET command: must be 3 or more args, got: %#v", args)
 		}
 
-		cmd, err := command.ParseSet(args)
+		cmd, err := command.ParseSet(connCtx, args)
 		if err != nil {
 			return replyError(conn, fmt.Errorf("parse SET: %w", err))
 		}
@@ -159,7 +166,7 @@ func handleCommand(ctx context.Context, conn io.Writer, svc *service.Service, co
 			return fmt.Errorf("invalid INCR command: must be 1 arg, got: %#v", args)
 		}
 
-		cmd, err := command.ParseIncr(args)
+		cmd, err := command.ParseIncr(connCtx, args)
 		if err != nil {
 			return replyError(conn, fmt.Errorf("parse INCR: %w", err))
 		}
@@ -172,10 +179,28 @@ func handleCommand(ctx context.Context, conn io.Writer, svc *service.Service, co
 		return reply.Encode(conn)
 
 	case "MULTI":
-		return enc.OK.Encode(conn)
+		reply, err := svc.Multi(ctx, command.Multi{Context: connCtx})
+		if err != nil {
+			return fmt.Errorf("exec MULTI: %w", err)
+		}
+
+		return reply.Encode(conn)
 
 	case "EXEC":
-		return replyError(conn, service.ErrExecWithoutMulti)
+		reply, err := svc.Exec(ctx, command.Exec{Context: connCtx})
+		if err != nil {
+			return fmt.Errorf("exec DISCARD: %w", err)
+		}
+
+		return reply.Encode(conn)
+
+	case "DISCARD":
+		reply, err := svc.Discard(ctx, command.Discard{Context: connCtx})
+		if err != nil {
+			return fmt.Errorf("exec DISCARD: %w", err)
+		}
+
+		return reply.Encode(conn)
 
 	default:
 		return fmt.Errorf("command not implemented: %s", commandStr)

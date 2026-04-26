@@ -17,9 +17,8 @@ type Set struct {
 	Expire    time.Duration
 	GetOld    bool
 	Time      time.Time
+	Context
 }
-
-func (se Set) isCommand() {}
 
 type ExistsKind int
 
@@ -29,9 +28,10 @@ const (
 	ExistsKindXX              // if exists
 )
 
-func ParseSet(args []string) (Set, error) {
+func ParseSet(ctx Context, args []string) (Set, error) {
 	cmd := Set{}
 	cmd.Time = time.Now()
+	cmd.Context = ctx
 
 	iter := iter.Iter(args)
 	key, ok := iter.Next()

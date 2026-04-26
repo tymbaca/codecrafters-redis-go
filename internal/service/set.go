@@ -32,8 +32,8 @@ func (s *Service) Set(ctx context.Context, cmd command.Set) (enc.Value, error) {
 }
 
 func (s *Service) set(ctx context.Context, cmd command.Set) (option.Value[string], bool, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.dataMu.Lock()
+	defer s.dataMu.Unlock()
 
 	oldValue, exists := s.data[cmd.Key]
 	oldValueOption := option.Wrap(oldValue.val, exists)

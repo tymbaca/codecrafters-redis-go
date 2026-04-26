@@ -10,13 +10,13 @@ import (
 type Get struct {
 	Key  string
 	Time time.Time
+	Context
 }
 
-func (ge Get) isCommand() {}
-
-func ParseGet(args []string) (Get, error) {
+func ParseGet(ctx Context, args []string) (Get, error) {
 	cmd := Get{}
 	cmd.Time = time.Now()
+	cmd.Context = ctx
 
 	iter := iter.Iter(args)
 	key, ok := iter.Next()

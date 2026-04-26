@@ -49,7 +49,7 @@ func TestParseSet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, gotErr := command.ParseSet(tt.args)
+			got, gotErr := command.ParseSet(command.Context{}, tt.args)
 			if tt.wantErr {
 				require.Error(t, gotErr)
 				return

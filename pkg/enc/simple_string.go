@@ -5,7 +5,10 @@ import (
 	"io"
 )
 
-const OK = SimpleString("OK")
+const (
+	OK     = SimpleString("OK")
+	Queued = SimpleString("QUEUED")
+)
 
 type SimpleString string
 
