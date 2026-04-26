@@ -36,8 +36,10 @@ func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) 
 		return nil, fmt.Errorf("append to WAL: %w", err)
 	}
 
-	if queued := s.txQueue(ctx, cmd); queued {
-		return enc.Queued, nil
+	if queue {
+		if queued := s.txQueue(ctx, cmd); queued {
+			return enc.Queued, nil
+		}
 	}
 
 	return nil, nil
