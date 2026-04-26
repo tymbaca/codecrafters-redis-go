@@ -10,6 +10,7 @@ import (
 
 func New() *Service {
 	return &Service{
+		txs:  make(map[string][]command.Command),
 		data: make(map[string]entry),
 		wal:  noopWal{},
 	}
