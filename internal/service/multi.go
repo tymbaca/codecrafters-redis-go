@@ -7,12 +7,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
-func (s *Service) Multi(ctx context.Context, cmd command.Multi) (enc.Value, error) {
-	pre, err := s.prelude(ctx, cmd, false)
-	if err != nil || pre != nil {
-		return pre, err
-	}
-
+func (s *Service) multi(ctx context.Context, cmd command.Multi) (enc.Value, error) {
 	s.txsMu.Lock()
 	defer s.txsMu.Unlock()
 

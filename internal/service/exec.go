@@ -2,18 +2,12 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
-func (s *Service) Exec(ctx context.Context, cmd command.Exec) (enc.Value, error) {
-	pre, err := s.prelude(ctx, cmd, false)
-	if err != nil || pre != nil {
-		return pre, err
-	}
-
+func (s *Service) exec(ctx context.Context, cmd command.Exec) (enc.Value, error) {
 	s.txsMu.Lock()
 	defer s.txsMu.Unlock()
 
@@ -31,32 +25,6 @@ func (s *Service) Exec(ctx context.Context, cmd command.Exec) (enc.Value, error)
 	delete(s.txs, cmd.ConnID)
 
 	return execVals, nil
-}
-
-func (s *Service) execCmds(ctx context.Context, cmds []command.Command) (enc.Value, error) {
-	var arr enc.Array
-	for _, cmd := range cmds {
-		var val enc.Value
-		var err error
-
-		switch cmd := cmd.(type) {
-		case command.Get:
-			val, err = s.Get(ctx, cmd)
-		case command.Set:
-			val, err = s.Set(ctx, cmd)
-		case command.Incr:
-			val, err = s.Incr(ctx, cmd)
-		default:
-			continue
-		}
-		if err != nil {
-			return nil, fmt.Errorf("exec %#v: %w", cmd, err)
-		}
-
-		arr = append(arr, val)
-	}
-
-	return arr, nil
 }
 
 type ignorePrelude struct{}

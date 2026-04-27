@@ -8,13 +8,8 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
-func (s *Service) Incr(ctx context.Context, cmd command.Incr) (enc.Value, error) {
-	pre, err := s.prelude(ctx, cmd, true)
-	if err != nil || pre != nil {
-		return pre, err
-	}
-
-	valStr, set, err := s.get(ctx, command.Get(cmd))
+func (s *Service) incr(ctx context.Context, cmd command.Incr) (enc.Value, error) {
+	valStr, set, err := s.getInner(ctx, command.Get(cmd))
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +25,7 @@ func (s *Service) Incr(ctx context.Context, cmd command.Incr) (enc.Value, error)
 
 	val++
 
-	_, _, err = s.set(ctx, command.Set{
+	_, _, err = s.setInner(ctx, command.Set{
 		Key:  cmd.Key,
 		Val:  strconv.Itoa(val),
 		Time: cmd.Time,

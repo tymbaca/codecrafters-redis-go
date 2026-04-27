@@ -7,12 +7,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
-func (s *Service) Discard(ctx context.Context, cmd command.Discard) (enc.Value, error) {
-	pre, err := s.prelude(ctx, cmd, false)
-	if err != nil || pre != nil {
-		return pre, err
-	}
-
+func (s *Service) discard(ctx context.Context, cmd command.Discard) (enc.Value, error) {
 	s.txsMu.Lock()
 	defer s.txsMu.Unlock()
 

@@ -68,7 +68,7 @@ func handleConn(ctx context.Context, conn io.ReadWriter, svc *service.Service) e
 		ConnID: uuid.NewString(),
 	}
 
-	defer svc.Discard(ctx, command.Discard{Context: connCtx})
+	defer svc.Exec(ctx, command.Discard{Context: connCtx})
 
 	for {
 		command, ok, err := readCommand(conn)
@@ -137,7 +137,7 @@ func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context,
 			return replyError(conn, fmt.Errorf("parse GET: %w", err))
 		}
 
-		reply, err := svc.Get(ctx, cmd)
+		reply, err := svc.Exec(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("exec GET: %w", err)
 		}
@@ -154,7 +154,7 @@ func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context,
 			return replyError(conn, fmt.Errorf("parse SET: %w", err))
 		}
 
-		reply, err := svc.Set(ctx, cmd)
+		reply, err := svc.Exec(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("exec SET: %w", err)
 		}
@@ -171,7 +171,7 @@ func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context,
 			return replyError(conn, fmt.Errorf("parse INCR: %w", err))
 		}
 
-		reply, err := svc.Incr(ctx, cmd)
+		reply, err := svc.Exec(ctx, cmd)
 		if err != nil {
 			return fmt.Errorf("exec INCR: %w", err)
 		}
@@ -179,7 +179,7 @@ func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context,
 		return reply.Encode(conn)
 
 	case "MULTI":
-		reply, err := svc.Multi(ctx, command.Multi{Context: connCtx})
+		reply, err := svc.Exec(ctx, command.Multi{Context: connCtx})
 		if err != nil {
 			return fmt.Errorf("exec MULTI: %w", err)
 		}
@@ -195,7 +195,7 @@ func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context,
 		return reply.Encode(conn)
 
 	case "DISCARD":
-		reply, err := svc.Discard(ctx, command.Discard{Context: connCtx})
+		reply, err := svc.Exec(ctx, command.Discard{Context: connCtx})
 		if err != nil {
 			return fmt.Errorf("exec DISCARD: %w", err)
 		}

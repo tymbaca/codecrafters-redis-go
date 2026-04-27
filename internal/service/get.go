@@ -7,13 +7,8 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
-func (s *Service) Get(ctx context.Context, cmd command.Get) (enc.Value, error) {
-	pre, err := s.prelude(ctx, cmd, true)
-	if err != nil || pre != nil {
-		return pre, err
-	}
-
-	val, set, err := s.get(ctx, cmd)
+func (s *Service) get(ctx context.Context, cmd command.Get) (enc.Value, error) {
+	val, set, err := s.getInner(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +17,7 @@ func (s *Service) Get(ctx context.Context, cmd command.Get) (enc.Value, error) {
 	return reply, nil
 }
 
-func (s *Service) get(ctx context.Context, cmd command.Get) (string, bool, error) {
+func (s *Service) getInner(ctx context.Context, cmd command.Get) (string, bool, error) {
 	s.dataMu.RLock()
 	defer s.dataMu.RUnlock()
 

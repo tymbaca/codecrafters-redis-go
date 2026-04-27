@@ -8,13 +8,8 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/option"
 )
 
-func (s *Service) Set(ctx context.Context, cmd command.Set) (enc.Value, error) {
-	pre, err := s.prelude(ctx, cmd, true)
-	if err != nil || pre != nil {
-		return pre, err
-	}
-
-	old, setOk, err := s.set(ctx, cmd)
+func (s *Service) set(ctx context.Context, cmd command.Set) (enc.Value, error) {
+	old, setOk, err := s.setInner(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +26,7 @@ func (s *Service) Set(ctx context.Context, cmd command.Set) (enc.Value, error) {
 	return enc.OK, nil
 }
 
-func (s *Service) set(ctx context.Context, cmd command.Set) (option.Value[string], bool, error) {
+func (s *Service) setInner(ctx context.Context, cmd command.Set) (option.Value[string], bool, error) {
 	s.dataMu.Lock()
 	defer s.dataMu.Unlock()
 
