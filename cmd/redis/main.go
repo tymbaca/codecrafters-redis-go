@@ -203,7 +203,7 @@ func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context,
 		return reply.Encode(conn)
 
 	default:
-		return fmt.Errorf("command not implemented: %s", commandStr)
+		return replyError(conn, service.ErrUnknownCommand(commandStr.Val))
 	}
 }
 
