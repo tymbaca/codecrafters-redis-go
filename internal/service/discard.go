@@ -12,7 +12,7 @@ func (s *Service) discard(ctx context.Context, cmd command.Discard) (enc.Value, 
 	defer s.txsMu.Unlock()
 
 	if _, exists := s.txs[cmd.ConnID]; !exists {
-		return errValue(ErrDiscardWithoutMulti), nil
+		return errValue(enc.ErrDiscardWithoutMulti), nil
 	}
 
 	delete(s.txs, cmd.ConnID)

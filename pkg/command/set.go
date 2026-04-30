@@ -33,7 +33,7 @@ func ParseSet(ctx Context, args []string) (Set, error) {
 	cmd.Time = time.Now()
 	cmd.Context = ctx
 
-	iter := iter.Iter(args)
+	iter := iter.New(args)
 	key, ok := iter.Next()
 	if !ok {
 		return Set{}, fmt.Errorf("expected SET key")

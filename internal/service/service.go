@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -10,12 +11,22 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
-func New() *Service {
-	return &Service{
-		txs:  make(map[string][]command.Command),
-		data: make(map[string]entry),
-		wal:  noopWal{},
+func New() (*Service, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("get current dir: %w", err)
 	}
+
+	return &Service{
+		txs:            make(map[string][]command.Command),
+		data:           make(map[string]entry),
+		wal:            noopWal{},
+		dir:            cwd,
+		appendOnly:     false,
+		appendDir:      "appendonlydir",
+		appendFilename: "appendonly.aof",
+		appendFsync:    "everysec",
+	}, nil
 }
 
 type Service struct {
@@ -25,6 +36,13 @@ type Service struct {
 	data   map[string]entry
 	txsMu  sync.Mutex
 	txs    map[string][]command.Command
+
+	cfgMu          sync.RWMutex
+	dir            string
+	appendOnly     bool
+	appendDir      string
+	appendFilename string
+	appendFsync    string
 }
 
 func (s *Service) Exec(ctx context.Context, cmd command.Command) (enc.Value, error) {
@@ -57,6 +75,8 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 		return s.set(ctx, cmd)
 	case command.Incr:
 		return s.incr(ctx, cmd)
+	case command.Config:
+		return s.config(ctx, cmd)
 	}
 
 	panic("unreachable")

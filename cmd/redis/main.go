@@ -35,7 +35,10 @@ func Run() error {
 	})
 	defer cancelAfter()
 
-	service := service.New()
+	service, err := service.New()
+	if err != nil {
+		return err
+	}
 
 	for {
 		conn, err := l.Accept()
@@ -189,7 +192,7 @@ func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context,
 	case "EXEC":
 		reply, err := svc.Exec(ctx, command.Exec{Context: connCtx})
 		if err != nil {
-			return fmt.Errorf("exec DISCARD: %w", err)
+			return fmt.Errorf("exec EXEC: %w", err)
 		}
 
 		return reply.Encode(conn)
@@ -202,8 +205,21 @@ func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context,
 
 		return reply.Encode(conn)
 
+	case "CONFIG":
+		cmd, err := command.ParseConfig(connCtx, args)
+		if err != nil {
+			return replyError(conn, fmt.Errorf("parse CONFIG: %w", err))
+		}
+
+		reply, err := svc.Exec(ctx, cmd)
+		if err != nil {
+			return fmt.Errorf("exec CONFIG: %w", err)
+		}
+
+		return reply.Encode(conn)
+
 	default:
-		return replyError(conn, service.ErrUnknownCommand(commandStr.Val))
+		return replyError(conn, enc.ErrUnknownCommand(commandStr.Val))
 	}
 }
 

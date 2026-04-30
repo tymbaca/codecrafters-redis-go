@@ -13,7 +13,7 @@ func (s *Service) multi(ctx context.Context, cmd command.Multi) (enc.Value, erro
 
 	_, alreadyExists := s.txs[cmd.ConnID]
 	if alreadyExists {
-		return errValue(ErrNestedMulti), nil
+		return errValue(enc.ErrNestedMulti), nil
 	}
 
 	s.txs[cmd.ConnID] = make([]command.Command, 0)

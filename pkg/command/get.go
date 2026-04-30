@@ -18,7 +18,7 @@ func ParseGet(ctx Context, args []string) (Get, error) {
 	cmd.Time = time.Now()
 	cmd.Context = ctx
 
-	iter := iter.Iter(args)
+	iter := iter.New(args)
 	key, ok := iter.Next()
 	if !ok {
 		return Get{}, fmt.Errorf("expected GET key")

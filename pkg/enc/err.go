@@ -1,4 +1,4 @@
-package service
+package enc
 
 import (
 	"errors"
@@ -6,9 +6,17 @@ import (
 )
 
 var (
+	ErrSyntaxError         = errors.New("ERR syntax error")
 	ErrNotInteger          = errors.New("ERR value is not an integer or out of range")
 	ErrNestedMulti         = errors.New("ERR MULTI calls can not be nested")
 	ErrExecWithoutMulti    = errors.New("ERR EXEC without MULTI")
 	ErrDiscardWithoutMulti = errors.New("ERR DISCARD without MULTI")
 	ErrUnknownCommand      = func(name string) error { return fmt.Errorf("ERR unknown command '%s'", name) }
+
+	ErrConfigSetFailed = func(key string, desc string) error {
+		return fmt.Errorf("ERR CONFIG SET failed (possibly related to argument '%s') - %s", key, desc)
+	}
+	ErrConfigSetUnknownOption = func(key string) error {
+		return fmt.Errorf("ERR Unknown option or number of arguments for CONFIG SET - '%s'", key)
+	}
 )

@@ -13,7 +13,7 @@ func (s *Service) exec(ctx context.Context, cmd command.Exec) (enc.Value, error)
 
 	queue, exists := s.txs[cmd.ConnID]
 	if !exists {
-		return errValue(ErrExecWithoutMulti), nil
+		return errValue(enc.ErrExecWithoutMulti), nil
 	}
 
 	ctx = context.WithValue(ctx, ignorePreludeKey, ignorePreludeKey)

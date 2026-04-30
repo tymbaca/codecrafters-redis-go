@@ -20,7 +20,7 @@ func (s *Service) incr(ctx context.Context, cmd command.Incr) (enc.Value, error)
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
-		return errValue(ErrNotInteger), nil
+		return errValue(enc.ErrNotInteger), nil
 	}
 
 	val++
