@@ -7,6 +7,7 @@ import (
 
 const (
 	OK     = SimpleString("OK")
+	Pong   = SimpleString("PONG")
 	Queued = SimpleString("QUEUED")
 )
 

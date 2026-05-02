@@ -138,7 +138,7 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 	case command.Echo:
 		return cmd.Val, nil
 	case command.Ping:
-		return enc.OK, nil
+		return enc.Pong, nil
 	}
 
 	panic("unreachable")
