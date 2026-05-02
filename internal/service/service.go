@@ -93,6 +93,9 @@ func ensureAof(svc *Service) error {
 }
 
 func (s *Service) Intercept(ctx context.Context, cmd enc.Value) error {
+	s.cfgMu.Lock()
+	defer s.cfgMu.Unlock()
+
 	if s.aof == nil {
 		return nil
 	}
