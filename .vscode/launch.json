@@ -10,7 +10,8 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/app"
+            "program": "${workspaceFolder}/app",
+            "args": ["--appendonly=yes"]
         }
     ]
 }
