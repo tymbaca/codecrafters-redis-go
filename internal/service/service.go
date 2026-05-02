@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
-	aofpkg "github.com/codecrafters-io/redis-starter-go/internal/aof"
+	"github.com/codecrafters-io/redis-starter-go/internal/aof"
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
 type Service struct {
-	aof aof
+	aof *aof.AOF
 	wal wal
 
 	dataMu sync.RWMutex
@@ -68,20 +68,28 @@ func New(opts Options) (*Service, error) {
 	}
 
 	if svc.appendOnly {
-		ensureDirCreated(filepath.Join(svc.dir, svc.appendDir))
-		ensureFileCreated(filepath.Join(svc.dir, svc.appendDir, svc.appendFile+".1.incr.aof"))
-		if err := ensureManifestFile(svc); err != nil {
-			return nil, err
-		}
+		ensureAof(svc)
+	}
 
-		aof, err := aofpkg.New(svc.dir, svc.appendDir, svc.appendFile)
+	return svc, nil
+}
+
+func ensureAof(svc *Service) error {
+	ensureDirCreated(filepath.Join(svc.dir, svc.appendDir))
+	ensureFileCreated(filepath.Join(svc.dir, svc.appendDir, svc.appendFile+".1.incr.aof"))
+	if err := ensureManifestFile(svc); err != nil {
+		return err
+	}
+
+	if svc.aof == nil {
+		aof, err := aof.New(svc.dir, svc.appendDir, svc.appendFile)
 		if err != nil {
-			return nil, fmt.Errorf("init AOF: %w", err)
+			return fmt.Errorf("init AOF: %w", err)
 		}
 		svc.aof = aof
 	}
 
-	return svc, nil
+	return nil
 }
 
 func (s *Service) Intercept(ctx context.Context, cmd enc.Value) error {
@@ -155,10 +163,6 @@ func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) 
 	}
 
 	return nil, nil
-}
-
-type aof interface {
-	Append(ctx context.Context, cmd enc.Value) error
 }
 
 type wal interface {

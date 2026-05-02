@@ -30,7 +30,7 @@ func New(cwd, aofDirname, aofFilename string) (*AOF, error) {
 type AOF struct {
 	cwd, aofDirname, aofFilename string
 
-	currentFile io.Writer
+	currentFile io.WriteCloser
 	offset      int
 }
 
@@ -41,4 +41,8 @@ func (a *AOF) Append(ctx context.Context, cmd enc.Value) error {
 	a.offset += w.N
 
 	return err
+}
+
+func (a *AOF) Close() error {
+	return a.currentFile.Close()
 }

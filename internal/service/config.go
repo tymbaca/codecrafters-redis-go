@@ -67,9 +67,16 @@ func (s *Service) configSet(_ context.Context, cmd command.Config) (enc.Value, e
 		case "appendonly":
 			switch val {
 			case "yes":
-				s.appendOnly = true
+				if !s.appendOnly {
+					ensureAof(s)
+					s.appendOnly = true
+				}
 			case "no":
-				s.appendOnly = false
+				if s.appendOnly {
+					s.aof.Close()
+					s.aof = nil
+					s.appendOnly = false
+				}
 			}
 		case "appenddirname":
 			s.appendDir = val
