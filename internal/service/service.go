@@ -11,22 +11,44 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
-func New() (*Service, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("get current dir: %w", err)
-	}
+type Options struct {
+	Dir            string
+	AppendOnly     bool
+	AppendDir      string
+	AppendFilename string
+	AppendFsync    string
+}
 
-	return &Service{
+func New(opts Options) (*Service, error) {
+	svc := &Service{
 		txs:            make(map[string][]command.Command),
 		data:           make(map[string]entry),
 		wal:            noopWal{},
-		dir:            cwd,
-		appendOnly:     false,
-		appendDir:      "appendonlydir",
-		appendFilename: "appendonly.aof",
-		appendFsync:    "everysec",
-	}, nil
+		dir:            opts.Dir,
+		appendOnly:     opts.AppendOnly,
+		appendDir:      opts.AppendDir,
+		appendFilename: opts.AppendFilename,
+		appendFsync:    opts.AppendFsync,
+	}
+
+	if svc.dir != "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("get current dir: %w", err)
+		}
+		svc.dir = cwd
+	}
+	if svc.appendDir != "" {
+		svc.appendDir = "appendonlydir"
+	}
+	if svc.appendFilename != "" {
+		svc.appendFilename = "appendonly.aof"
+	}
+	if svc.appendFsync != "" {
+		svc.appendFsync = "everysec"
+	}
+
+	return svc, nil
 }
 
 type Service struct {

@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log/slog"
@@ -19,9 +20,18 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	dirFlag            = flag.String("dir", "", "current working directory")
+	appendOnlyFlag     = flag.String("appendonly", "no", "enables appendonly mode")
+	appendDirnameFlag  = flag.String("appenddirname", "", "appendonly directory name")
+	appendFilenameFlag = flag.String("appendfilename", "", "appendonly file name")
+	appendFsyncFlag    = flag.String("appendfsync", "", "appendonly fsync frequency")
+)
+
 func Run() error {
-	ctx := context.Background()
-	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	flag.Parse()
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
@@ -35,7 +45,13 @@ func Run() error {
 	})
 	defer cancelAfter()
 
-	service, err := service.New()
+	service, err := service.New(service.Options{
+		Dir:            *dirFlag,
+		AppendOnly:     *appendOnlyFlag == "yes",
+		AppendDir:      *appendDirnameFlag,
+		AppendFilename: *appendFilenameFlag,
+		AppendFsync:    *appendFsyncFlag,
+	})
 	if err != nil {
 		return err
 	}
