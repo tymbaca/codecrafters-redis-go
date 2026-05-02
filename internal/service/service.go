@@ -31,20 +31,20 @@ func New(opts Options) (*Service, error) {
 		appendFsync:    opts.AppendFsync,
 	}
 
-	if svc.dir != "" {
+	if svc.dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return nil, fmt.Errorf("get current dir: %w", err)
 		}
 		svc.dir = cwd
 	}
-	if svc.appendDir != "" {
+	if svc.appendDir == "" {
 		svc.appendDir = "appendonlydir"
 	}
-	if svc.appendFilename != "" {
+	if svc.appendFilename == "" {
 		svc.appendFilename = "appendonly.aof"
 	}
-	if svc.appendFsync != "" {
+	if svc.appendFsync == "" {
 		svc.appendFsync = "everysec"
 	}
 
