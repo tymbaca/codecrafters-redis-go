@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -11,24 +12,40 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
 
+type Service struct {
+	wal wal
+
+	dataMu sync.RWMutex
+	data   map[string]entry
+	txsMu  sync.Mutex
+	txs    map[string][]command.Command
+
+	cfgMu       sync.RWMutex
+	dir         string
+	appendOnly  bool
+	appendDir   string
+	appendFile  string
+	appendFsync string
+}
+
 type Options struct {
-	Dir            string
-	AppendOnly     bool
-	AppendDir      string
-	AppendFilename string
-	AppendFsync    string
+	Dir         string
+	AppendOnly  bool
+	AppendDir   string
+	AppendFile  string
+	AppendFsync string
 }
 
 func New(opts Options) (*Service, error) {
 	svc := &Service{
-		txs:            make(map[string][]command.Command),
-		data:           make(map[string]entry),
-		wal:            noopWal{},
-		dir:            opts.Dir,
-		appendOnly:     opts.AppendOnly,
-		appendDir:      opts.AppendDir,
-		appendFilename: opts.AppendFilename,
-		appendFsync:    opts.AppendFsync,
+		txs:         make(map[string][]command.Command),
+		data:        make(map[string]entry),
+		wal:         noopWal{},
+		dir:         opts.Dir,
+		appendOnly:  opts.AppendOnly,
+		appendDir:   opts.AppendDir,
+		appendFile:  opts.AppendFile,
+		appendFsync: opts.AppendFsync,
 	}
 
 	if svc.dir == "" {
@@ -41,30 +58,19 @@ func New(opts Options) (*Service, error) {
 	if svc.appendDir == "" {
 		svc.appendDir = "appendonlydir"
 	}
-	if svc.appendFilename == "" {
-		svc.appendFilename = "appendonly.aof"
+	if svc.appendFile == "" {
+		svc.appendFile = "appendonly.aof"
 	}
 	if svc.appendFsync == "" {
 		svc.appendFsync = "everysec"
 	}
 
+	if svc.appendOnly {
+		ensureDirCreated(filepath.Join(svc.dir, svc.appendDir))
+		// ensureFileCreated(filepath.Join(svc.dir, svc.appendDir, svc.appendFile))
+	}
+
 	return svc, nil
-}
-
-type Service struct {
-	wal wal
-
-	dataMu sync.RWMutex
-	data   map[string]entry
-	txsMu  sync.Mutex
-	txs    map[string][]command.Command
-
-	cfgMu          sync.RWMutex
-	dir            string
-	appendOnly     bool
-	appendDir      string
-	appendFilename string
-	appendFsync    string
 }
 
 func (s *Service) Exec(ctx context.Context, cmd command.Command) (enc.Value, error) {
@@ -148,4 +154,12 @@ type entry struct {
 	val       string
 	expireSet bool
 	expire    time.Time
+}
+
+func ensureDirCreated(dir string) {
+	_ = os.MkdirAll(dir, 0o755)
+}
+
+func ensureFileCreated(dir string) {
+	_ = os.MkdirAll(dir, 0o755)
 }

@@ -46,11 +46,11 @@ func Run() error {
 	defer cancelAfter()
 
 	service, err := service.New(service.Options{
-		Dir:            *dirFlag,
-		AppendOnly:     *appendOnlyFlag == "yes",
-		AppendDir:      *appendDirnameFlag,
-		AppendFilename: *appendFilenameFlag,
-		AppendFsync:    *appendFsyncFlag,
+		Dir:         *dirFlag,
+		AppendOnly:  *appendOnlyFlag == "yes",
+		AppendDir:   *appendDirnameFlag,
+		AppendFile:  *appendFilenameFlag,
+		AppendFsync: *appendFsyncFlag,
 	})
 	if err != nil {
 		return err

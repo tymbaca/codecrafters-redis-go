@@ -42,7 +42,7 @@ func (s *Service) configGet(_ context.Context, cmd command.Config) (enc.Value, e
 		case "appenddirname":
 			val = s.appendDir
 		case "appendfilename":
-			val = s.appendFilename
+			val = s.appendFile
 		case "appendfsync":
 			val = s.appendFsync
 		default:
@@ -74,7 +74,7 @@ func (s *Service) configSet(_ context.Context, cmd command.Config) (enc.Value, e
 		case "appenddirname":
 			s.appendDir = val
 		case "appendfilename":
-			s.appendFilename = val
+			s.appendFile = val
 		case "appendfsync":
 			s.appendFsync = val
 		default:
