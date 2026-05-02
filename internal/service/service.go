@@ -135,6 +135,10 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 		return s.incr(ctx, cmd)
 	case command.Config:
 		return s.config(ctx, cmd)
+	case command.Echo:
+		return cmd.Val, nil
+	case command.Ping:
+		return enc.OK, nil
 	}
 
 	panic("unreachable")
