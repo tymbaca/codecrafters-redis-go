@@ -93,6 +93,10 @@ func ensureAof(svc *Service) error {
 }
 
 func (s *Service) Intercept(ctx context.Context, cmd enc.Value) error {
+	if s.aof == nil {
+		return nil
+	}
+
 	return s.aof.Append(ctx, cmd)
 }
 
