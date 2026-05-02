@@ -68,6 +68,8 @@ func New(opts Options) (*Service, error) {
 	if svc.appendOnly {
 		ensureDirCreated(filepath.Join(svc.dir, svc.appendDir))
 		ensureFileCreated(filepath.Join(svc.dir, svc.appendDir, svc.appendFile+".1.incr.aof"))
+		if err := ensureManifestFile(svc); err != nil {
+		}
 	}
 
 	return svc, nil
