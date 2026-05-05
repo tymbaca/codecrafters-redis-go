@@ -48,7 +48,7 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 
 		cmdCtx := command.Context{}
 
-		for _, rec := range toReadRecords {
+		for i, rec := range toReadRecords {
 			f, err := os.Open(filepath.Join(cwd, aof.aofDirname, rec.File))
 			if err != nil {
 				return nil, err
@@ -72,6 +72,16 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 				err = replay(ctx, cmd)
 				if err != nil {
 					return nil, fmt.Errorf("replay command: %w", err)
+				}
+			}
+
+			if i == len(toReadRecords)-1 {
+				aof.currentFileNum = rec.Seq
+				aof.currentFile = f
+			} else {
+				err := f.Close()
+				if err != nil {
+					return nil, fmt.Errorf("close file: %w", err)
 				}
 			}
 		}
