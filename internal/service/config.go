@@ -57,7 +57,7 @@ func (s *Service) configGet(_ context.Context, cmd command.Config) (enc.Value, e
 	return res, nil
 }
 
-func (s *Service) configSet(_ context.Context, cmd command.Config) (enc.Value, error) {
+func (s *Service) configSet(ctx context.Context, cmd command.Config) (enc.Value, error) {
 	for i := range cmd.Keys {
 		key := cmd.Keys[i]
 		val := cmd.Vals[i]
@@ -69,7 +69,7 @@ func (s *Service) configSet(_ context.Context, cmd command.Config) (enc.Value, e
 			switch val {
 			case "yes":
 				if !s.appendOnly {
-					aof, err := aof.New(s.dir, s.appendDir, s.appendFile)
+					aof, err := aof.New(ctx, s.dir, s.appendDir, s.appendFile, nil)
 					if err != nil {
 						return nil, err
 					}

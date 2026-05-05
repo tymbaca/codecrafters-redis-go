@@ -37,7 +37,7 @@ type Options struct {
 	AppendFsync string
 }
 
-func New(opts Options) (*Service, error) {
+func New(ctx context.Context, opts Options) (*Service, error) {
 	svc := &Service{
 		txs:         make(map[string][]command.Command),
 		data:        make(map[string]entry),
@@ -67,8 +67,10 @@ func New(opts Options) (*Service, error) {
 	}
 
 	if svc.appendOnly {
-		ensureAof(svc)
-		aof, err := aof.New(s.dir, s.appendDir, s.appendFile)
+		aof, err := aof.New(ctx, svc.dir, svc.appendDir, svc.appendFile, func(ctx context.Context, cmd command.Command) error {
+			_, err := svc.Exec(ctx, cmd)
+			return err
+		})
 		if err != nil {
 			return nil, err
 		}

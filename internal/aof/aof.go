@@ -1,20 +1,25 @@
 package aof
 
 import (
+	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 
+	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/counting"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 	"github.com/codecrafters-io/redis-starter-go/pkg/manifest"
+	"github.com/samber/lo"
 )
 
 const limit = 100 * 1024 * 1024
 
-func New(cwd, aofDirname, aofFilename string) (*AOF, error) {
+func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(ctx context.Context, cmd command.Command) error) (*AOF, error) {
 	aof := &AOF{
 		cwd:            cwd,
 		aofDirname:     aofDirname,
@@ -25,23 +30,66 @@ func New(cwd, aofDirname, aofFilename string) (*AOF, error) {
 	}
 
 	manifestPath := filepath.Join(cwd, aofDirname, aofFilename+".manifest")
-	manifest, manifestFile, err := readOrCreateManifest(manifestPath)
+	mft, mftFile, err := readOrCreateManifest(manifestPath)
 	if err != nil {
 		return nil, err
 	}
-	aof.manifest = manifest
-	aof.manifestFile = manifestFile
+	aof.manifest = mft
+	aof.manifestFile = mftFile
 
 	if len(aof.manifest.Records) == 0 {
 		err := createNewFile(aof)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		
+	} else if replay != nil {
+		toReadRecords := lo.Filter(aof.manifest.Records, func(r manifest.Record, _ int) bool { return r.Type == "i" })
+		slices.SortFunc(toReadRecords, func(a, b manifest.Record) int { return cmp.Compare(a.Seq, b.Seq) })
+
+		cmdCtx := command.Context{}
+
+		for _, rec := range toReadRecords {
+			f, err := os.Open(filepath.Join(cwd, aof.aofDirname, rec.File))
+			if err != nil {
+				return nil, err
+			}
+
+			for {
+				cmdVal, ok, err := readCommand(f)
+				if err != nil {
+					return nil, fmt.Errorf("read command: %w", err)
+				}
+
+				if !ok {
+					break
+				}
+
+				cmd, err := command.Parse(cmdCtx, cmdVal)
+				if err != nil {
+					return nil, fmt.Errorf("parse command: %w", err)
+				}
+
+				err = replay(ctx, cmd)
+				if err != nil {
+					return nil, fmt.Errorf("replay command: %w", err)
+				}
+			}
+		}
 	}
 
 	return aof, nil
+}
+
+func readCommand(conn io.Reader) (enc.Value, bool, error) {
+	val, err := enc.Decode(conn)
+	if errors.Is(err, io.EOF) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+
+	return val, true, nil
 }
 
 func readOrCreateManifest(path string) (manifest.Manifest, *os.File, error) {
@@ -52,7 +100,7 @@ func readOrCreateManifest(path string) (manifest.Manifest, *os.File, error) {
 			return manifest.Manifest{}, nil, err
 		}
 	} else if err != nil {
-		return err
+		return manifest.Manifest{}, nil, err
 	}
 	defer f.Close()
 
@@ -61,28 +109,7 @@ func readOrCreateManifest(path string) (manifest.Manifest, *os.File, error) {
 		return manifest.Manifest{}, nil, err
 	}
 
-	return nil
-}
-
-func ensureAofFiles(cwd, aofDirname, aofFilename string) error {
-	ensureDirCreated(filepath.Join(cwd, aofDirname))
-	ensureFileCreated())
-	if err := ensureManifestFile(svc); err != nil {
-		return err
-	}
-
-	if svc.aof == nil {
-		aof, err := aof.New(svc.dir, svc.appendDir, svc.appendFile)
-		if err != nil {
-			return fmt.Errorf("init AOF: %w", err)
-		}
-		svc.aof = aof
-	}
-
-	return replayAof(svc)
-}
-
-func replayAof(svc *Service) error {
+	return mft, f, nil
 }
 
 type AOF struct {
@@ -116,7 +143,10 @@ func (a *AOF) Append(ctx context.Context, cmd enc.Value) error {
 }
 
 func (a *AOF) Close() error {
-	return a.currentFile.Close()
+	return errors.Join(
+		a.currentFile.Close(),
+		a.manifestFile.Close(),
+	)
 }
 
 func createNewFile(a *AOF) error {
@@ -161,15 +191,4 @@ func createNewFile(a *AOF) error {
 
 func filename(a *AOF) string {
 	return fmt.Sprintf("%s.%d.incr.aof", a.aofFilename, a.currentFileNum)
-}
-
-func ensureManifestFile() error {
-}
-
-func ensureDirCreated(dir string) {
-	_ = os.MkdirAll(dir, 0o755)
-}
-
-func ensureFileCreated(path string) {
-	_, _ = os.Create(path)
 }

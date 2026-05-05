@@ -43,7 +43,7 @@ func Run() error {
 	})
 	defer cancelAfter()
 
-	service, err := service.New(service.Options{
+	service, err := service.New(ctx, service.Options{
 		Dir:         *dirFlag,
 		AppendOnly:  *appendOnlyFlag == "yes",
 		AppendDir:   *appendDirnameFlag,
