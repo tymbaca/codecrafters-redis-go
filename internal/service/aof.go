@@ -31,3 +31,11 @@ func ensureManifestFile(svc *Service) error {
 
 	return nil
 }
+
+func ensureDirCreated(dir string) {
+	_ = os.MkdirAll(dir, 0o755)
+}
+
+func ensureFileCreated(path string) {
+	_, _ = os.Create(path)
+}

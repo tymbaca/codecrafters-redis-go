@@ -115,13 +115,13 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 	return val, true, nil
 }
 
-func handleCommand(ctx context.Context, conn io.Writer, connCtx command.Context, svc *service.Service, commandVal enc.Value) error {
-	err := svc.Intercept(ctx, commandVal)
+func handleCommand(ctx context.Context, conn io.Writer, cmdCtx command.Context, svc *service.Service, commandVal enc.Value) error {
+	err := svc.Intercept(ctx, cmdCtx, commandVal)
 	if err != nil {
 		return fmt.Errorf("intercept command value: %w", err)
 	}
 
-	cmd, err := command.Parse(connCtx, commandVal)
+	cmd, err := command.Parse(cmdCtx, commandVal)
 	if err != nil {
 		return replyError(conn, err)
 	}

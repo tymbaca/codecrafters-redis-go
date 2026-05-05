@@ -92,7 +92,7 @@ func ensureAof(svc *Service) error {
 	return nil
 }
 
-func (s *Service) Intercept(ctx context.Context, cmd enc.Value) error {
+func (s *Service) Intercept(ctx context.Context, cmdCtx command.Context, cmdVal enc.Value) error {
 	s.cfgMu.Lock()
 	defer s.cfgMu.Unlock()
 
@@ -100,7 +100,23 @@ func (s *Service) Intercept(ctx context.Context, cmd enc.Value) error {
 		return nil
 	}
 
-	return s.aof.Append(ctx, cmd)
+	cmd, err := command.Parse(cmdCtx, cmdVal)
+	if err != nil {
+		return fmt.Errorf("failed to parse command: %w", err)
+	}
+
+	switch cmd.(type) {
+	case command.Config:
+	case command.Discard:
+	case command.Exec:
+	case command.Incr:
+	case command.Multi:
+	case command.Set:
+	default:
+		return nil
+	}
+
+	return s.aof.Append(ctx, cmdVal)
 }
 
 func (s *Service) Exec(ctx context.Context, cmd command.Command) (enc.Value, error) {
@@ -188,12 +204,4 @@ type entry struct {
 	val       string
 	expireSet bool
 	expire    time.Time
-}
-
-func ensureDirCreated(dir string) {
-	_ = os.MkdirAll(dir, 0o755)
-}
-
-func ensureFileCreated(path string) {
-	_, _ = os.Create(path)
 }
