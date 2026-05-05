@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -69,27 +68,15 @@ func New(opts Options) (*Service, error) {
 
 	if svc.appendOnly {
 		ensureAof(svc)
-	}
-
-	return svc, nil
-}
-
-func ensureAof(svc *Service) error {
-	ensureDirCreated(filepath.Join(svc.dir, svc.appendDir))
-	ensureFileCreated(filepath.Join(svc.dir, svc.appendDir, svc.appendFile+".1.incr.aof"))
-	if err := ensureManifestFile(svc); err != nil {
-		return err
-	}
-
-	if svc.aof == nil {
-		aof, err := aof.New(svc.dir, svc.appendDir, svc.appendFile)
+		aof, err := aof.New(s.dir, s.appendDir, s.appendFile)
 		if err != nil {
-			return fmt.Errorf("init AOF: %w", err)
+			return nil, err
 		}
+
 		svc.aof = aof
 	}
 
-	return nil
+	return svc, nil
 }
 
 func (s *Service) Intercept(ctx context.Context, cmdCtx command.Context, cmdVal enc.Value) error {
@@ -106,14 +93,14 @@ func (s *Service) Intercept(ctx context.Context, cmdCtx command.Context, cmdVal 
 	}
 
 	switch cmd.(type) {
+	default:
+		return nil
 	case command.Config:
 	case command.Discard:
 	case command.Exec:
 	case command.Incr:
 	case command.Multi:
 	case command.Set:
-	default:
-		return nil
 	}
 
 	return s.aof.Append(ctx, cmdVal)

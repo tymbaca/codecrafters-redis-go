@@ -33,6 +33,10 @@ func Decode(r io.Reader) (Manifest, error) {
 
 	dataStr := string(data)
 	for line := range strings.SplitSeq(dataStr, "\n") {
+		if line == "" {
+			continue
+		}
+
 		parts := strings.Split(line, " ")
 		iter := iter.New(parts)
 

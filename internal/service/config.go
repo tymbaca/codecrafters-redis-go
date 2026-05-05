@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/codecrafters-io/redis-starter-go/internal/aof"
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 )
@@ -68,7 +69,12 @@ func (s *Service) configSet(_ context.Context, cmd command.Config) (enc.Value, e
 			switch val {
 			case "yes":
 				if !s.appendOnly {
-					ensureAof(s)
+					aof, err := aof.New(s.dir, s.appendDir, s.appendFile)
+					if err != nil {
+						return nil, err
+					}
+
+					s.aof = aof
 					s.appendOnly = true
 				}
 			case "no":
