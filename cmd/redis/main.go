@@ -29,6 +29,7 @@ var (
 func Run() error {
 	flag.Parse()
 	slog.SetLogLoggerLevel(slog.LevelDebug)
+	slog.Info("HELLO")
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
