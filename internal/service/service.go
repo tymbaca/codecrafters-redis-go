@@ -68,7 +68,7 @@ func New(ctx context.Context, opts Options) (*Service, error) {
 	}
 
 	if svc.appendOnly {
-		slog.Info("HELLO AOF")
+		slog.Debug("HELLO AOF")
 		aof, err := aof.New(ctx, svc.dir, svc.appendDir, svc.appendFile, func(ctx context.Context, cmd command.Command) error {
 			_, err := svc.Exec(ctx, cmd)
 			return err
