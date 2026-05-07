@@ -91,7 +91,7 @@ func (s *Service) Intercept(ctx context.Context, cmdCtx command.Context, cmdVal 
 
 	cmd, err := command.Parse(cmdCtx, cmdVal)
 	if err != nil {
-		return fmt.Errorf("failed to parse command: %w", err)
+		return nil
 	}
 
 	switch cmd.(type) {

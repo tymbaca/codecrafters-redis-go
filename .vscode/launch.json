@@ -8,10 +8,11 @@
         {
             "name": "Launch Package",
             "type": "go",
-            "request": "launch",
+            "request": "launch",    
             "mode": "auto",
             "program": "${workspaceFolder}/app",
-            "args": ["--appendonly=yes"]
+            "asRoot": true,
+            "args": ["--dir", "/tmp/aof-7442", "--appendonly", "yes", "--appenddirname", "blueberry", "--appendfilename", "raspberry.aof", "--appendfsync", "always"]
         }
     ]
 }

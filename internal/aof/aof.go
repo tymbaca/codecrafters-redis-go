@@ -29,8 +29,18 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 		offset:         0,
 	}
 
-	manifestPath := filepath.Join(cwd, aofDirname, aofFilename+".manifest")
-	mft, mftFile, err := readOrCreateManifest(manifestPath)
+	root, err := os.OpenRoot(cwd)
+	if err != nil {
+		return nil, err
+	}
+	aof.root = root
+
+	err = root.MkdirAll(aofDirname, 0o777)
+	if err != nil {
+		return nil, err
+	}
+
+	mft, mftFile, err := readOrCreateManifest(root, aofFilename+".manifest")
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +59,7 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 		cmdCtx := command.Context{}
 
 		for i, rec := range toReadRecords {
-			f, err := os.Open(filepath.Join(cwd, aof.aofDirname, rec.File))
+			f, err := os.OpenFile(filepath.Join(cwd, aof.aofDirname, rec.File), os.O_RDWR|os.O_APPEND, 0655)
 			if err != nil {
 				return nil, err
 			}
@@ -102,17 +112,11 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 	return val, true, nil
 }
 
-func readOrCreateManifest(path string) (manifest.Manifest, *os.File, error) {
-	f, err := os.OpenFile(path, os.O_RDWR, 0o644)
-	if os.IsNotExist(err) {
-		f, err = os.Create(path)
-		if err != nil {
-			return manifest.Manifest{}, nil, err
-		}
-	} else if err != nil {
+func readOrCreateManifest(root *os.Root, name string) (manifest.Manifest, *os.File, error) {
+	f, err := root.OpenFile(name, os.O_RDWR|os.O_CREATE, 0o666)
+	if err != nil {
 		return manifest.Manifest{}, nil, err
 	}
-	defer f.Close()
 
 	mft, err := manifest.Decode(f)
 	if err != nil {
@@ -123,6 +127,8 @@ func readOrCreateManifest(path string) (manifest.Manifest, *os.File, error) {
 }
 
 type AOF struct {
+	root *os.Root
+
 	cwd, aofDirname, aofFilename string
 
 	currentFileNum int
