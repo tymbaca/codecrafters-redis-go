@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
@@ -79,12 +80,14 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 					return nil, fmt.Errorf("parse command: %w", err)
 				}
 
+				slog.Debug("replaying command", "cmd", cmd, "file", rec.File, "seq", rec.Seq)
 				err = replay(ctx, cmd)
 				if err != nil {
 					return nil, fmt.Errorf("replay command: %w", err)
 				}
 			}
 
+			// set last file as current
 			if i == len(toReadRecords)-1 {
 				aof.currentFileNum = rec.Seq
 				aof.currentFile = f
