@@ -128,7 +128,10 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 }
 
 func readOrCreateManifest(root *os.Root, name string) (manifest.Manifest, *os.File, error) {
-	f, err := root.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0o666)
+	f, err := root.OpenFile(name, os.O_RDWR|os.O_SYNC, 0o666)
+	if os.IsNotExist(err) {
+		f, err = root.Create(name)
+	}
 	if err != nil {
 		return manifest.Manifest{}, nil, err
 	}
