@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -28,6 +29,8 @@ func Decode(r io.Reader) (Manifest, error) {
 	if err != nil {
 		return Manifest{}, err
 	}
+
+	slog.Debug("decode manifest", "data", string(data))
 
 	var records []Record
 
