@@ -86,6 +86,7 @@ func Run() error {
 func handleConn(ctx context.Context, conn io.ReadWriter, svc *service.Service) error {
 	connCtx := command.Context{
 		ConnID: uuid.NewString(),
+		Conn:   conn,
 	}
 	defer svc.Exec(ctx, command.Discard{Context: connCtx})
 
@@ -132,6 +133,10 @@ func handleCommand(ctx context.Context, conn io.Writer, cmdCtx command.Context, 
 	reply, err := svc.Exec(ctx, cmd)
 	if err != nil {
 		return fmt.Errorf("exec GET: %w", err)
+	}
+
+	if reply == nil {
+		return nil
 	}
 
 	return reply.Encode(conn)

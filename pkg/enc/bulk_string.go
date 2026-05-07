@@ -6,6 +6,14 @@ import (
 	"io"
 )
 
+func Bulk(val string) BulkString {
+	return BulkString{Val: val}
+}
+
+func Null() BulkString {
+	return BulkString{Null: true}
+}
+
 type BulkString struct {
 	Val  string
 	Null bool

@@ -16,10 +16,11 @@ type Service struct {
 	aof *aof.AOF
 	wal wal
 
-	dataMu sync.RWMutex
-	data   map[string]entry
-	txsMu  sync.Mutex
-	txs    map[string][]command.Command
+	dataMu   sync.RWMutex
+	data     map[string]entry
+	txsMu    sync.Mutex
+	txs      map[string][]command.Command
+	channels map[string]subscriberSet
 
 	cfgMu       sync.RWMutex
 	dir         string
@@ -28,6 +29,8 @@ type Service struct {
 	appendFile  string
 	appendFsync string
 }
+
+type subscriberSet = map[command.Context]struct{}
 
 type Options struct {
 	Dir         string
@@ -41,6 +44,7 @@ func New(ctx context.Context, opts Options) (*Service, error) {
 	svc := &Service{
 		txs:         make(map[string][]command.Command),
 		data:        make(map[string]entry),
+		channels:    make(map[string]subscriberSet),
 		wal:         noopWal{},
 		dir:         opts.Dir,
 		appendOnly:  opts.AppendOnly,
@@ -81,6 +85,63 @@ func New(ctx context.Context, opts Options) (*Service, error) {
 	return svc, nil
 }
 
+func (s *Service) Exec(ctx context.Context, cmd command.Command) (enc.Value, error) {
+	queue := true
+	switch cmd.(type) {
+	case command.Multi, command.Exec, command.Discard:
+		// no need to queue this commands in transaction
+		queue = false
+	}
+
+	pre, err := s.prelude(ctx, cmd, queue)
+	if err != nil || pre != nil {
+		return pre, err
+	}
+
+	return s.execCmd(ctx, cmd)
+}
+
+func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, error) {
+	switch cmd := cmd.(type) {
+	case command.Ping:
+		return enc.Pong, nil
+	case command.Echo:
+		return cmd.Val, nil
+	case command.Multi:
+		return s.multi(ctx, cmd)
+	case command.Exec:
+		return s.exec(ctx, cmd)
+	case command.Discard:
+		return s.discard(ctx, cmd)
+	case command.Config:
+		return s.config(ctx, cmd)
+	case command.Get:
+		return s.get(ctx, cmd)
+	case command.Set:
+		return s.set(ctx, cmd)
+	case command.Incr:
+		return s.incr(ctx, cmd)
+	case command.Subscribe:
+		return s.subscribe(ctx, cmd)
+	}
+
+	panic("unreachable")
+}
+
+func (s *Service) execCmds(ctx context.Context, cmds []command.Command) (enc.Value, error) {
+	var arr enc.Array
+	for _, cmd := range cmds {
+		val, err := s.execCmd(ctx, cmd)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, val)
+	}
+
+	return arr, nil
+}
+
 func (s *Service) Intercept(ctx context.Context, cmdCtx command.Context, cmdVal enc.Value) error {
 	s.cfgMu.Lock()
 	defer s.cfgMu.Unlock()
@@ -106,61 +167,6 @@ func (s *Service) Intercept(ctx context.Context, cmdCtx command.Context, cmdVal 
 	}
 
 	return s.aof.Append(ctx, cmdVal)
-}
-
-func (s *Service) Exec(ctx context.Context, cmd command.Command) (enc.Value, error) {
-	queue := true
-	switch cmd.(type) {
-	case command.Multi, command.Exec, command.Discard:
-		// no need to queue this commands in transaction
-		queue = false
-	}
-
-	pre, err := s.prelude(ctx, cmd, queue)
-	if err != nil || pre != nil {
-		return pre, err
-	}
-
-	return s.execCmd(ctx, cmd)
-}
-
-func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, error) {
-	switch cmd := cmd.(type) {
-	case command.Multi:
-		return s.multi(ctx, cmd)
-	case command.Exec:
-		return s.exec(ctx, cmd)
-	case command.Discard:
-		return s.discard(ctx, cmd)
-	case command.Get:
-		return s.get(ctx, cmd)
-	case command.Set:
-		return s.set(ctx, cmd)
-	case command.Incr:
-		return s.incr(ctx, cmd)
-	case command.Config:
-		return s.config(ctx, cmd)
-	case command.Echo:
-		return cmd.Val, nil
-	case command.Ping:
-		return enc.Pong, nil
-	}
-
-	panic("unreachable")
-}
-
-func (s *Service) execCmds(ctx context.Context, cmds []command.Command) (enc.Value, error) {
-	var arr enc.Array
-	for _, cmd := range cmds {
-		val, err := s.execCmd(ctx, cmd)
-		if err != nil {
-			return nil, err
-		}
-
-		arr = append(arr, val)
-	}
-
-	return arr, nil
 }
 
 func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) (enc.Value, error) {
