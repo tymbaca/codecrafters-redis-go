@@ -36,13 +36,12 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 	}
 	aof.root = root
 
-	data, err := os.ReadFile(filepath.Join(cwd, aofDirname, aofFilename+".manifest"))
-	if err != nil {
-		panic(err)
-	}
-	slog.Debug("manifest DEBUG", "data", string(data))
-
 	err = root.MkdirAll(aofDirname, 0o777)
+	if err != nil {
+		return nil, err
+	}
+
+	root, err = root.OpenRoot(aofDirname)
 	if err != nil {
 		return nil, err
 	}
