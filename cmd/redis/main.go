@@ -28,9 +28,9 @@ var (
 
 func Run() error {
 	flag.Parse()
-	slog.SetLogLoggerLevel(slog.LevelDebug)
-
-	slog.Info("HELLO", "appendonly", *appendOnlyFlag)
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
