@@ -41,6 +41,7 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 		return nil, err
 	}
 
+	slog.Debug("open or create manifest file", "path", filepath.Join(cwd, aofDirname, aofFilename+".manifest"))
 	mft, mftFile, err := readOrCreateManifest(root, aofFilename+".manifest")
 	if err != nil {
 		return nil, err
