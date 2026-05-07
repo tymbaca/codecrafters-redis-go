@@ -43,15 +43,16 @@ type Options struct {
 
 func New(ctx context.Context, opts Options) (*Service, error) {
 	svc := &Service{
-		txs:         make(map[string][]command.Command),
-		data:        make(map[string]entry),
-		channels:    make(map[string]subscriberSet),
-		wal:         noopWal{},
-		dir:         opts.Dir,
-		appendOnly:  opts.AppendOnly,
-		appendDir:   opts.AppendDir,
-		appendFile:  opts.AppendFile,
-		appendFsync: opts.AppendFsync,
+		txs:                  make(map[string][]command.Command),
+		data:                 make(map[string]entry),
+		channels:             make(map[string]subscriberSet),
+		subscribersChanCount: make(map[command.Context]int),
+		wal:                  noopWal{},
+		dir:                  opts.Dir,
+		appendOnly:           opts.AppendOnly,
+		appendDir:            opts.AppendDir,
+		appendFile:           opts.AppendFile,
+		appendFsync:          opts.AppendFsync,
 	}
 
 	if svc.dir == "" {
