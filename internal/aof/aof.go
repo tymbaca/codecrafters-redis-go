@@ -49,46 +49,57 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 	aof.manifestFile = mftFile
 
 	if len(aof.manifest.Records) == 0 {
+		slog.Debug("no records in manifest, creating first AOF file")
 		err := createNewFile(aof)
 		if err != nil {
 			return nil, err
 		}
-	} else if replay != nil {
+	} else {
+		slog.Debug("found records in manifest", "records", aof.manifest.Records)
+
 		toReadRecords := lo.Filter(aof.manifest.Records, func(r manifest.Record, _ int) bool { return r.Type == "i" })
 		slices.SortFunc(toReadRecords, func(a, b manifest.Record) int { return cmp.Compare(a.Seq, b.Seq) })
 
 		cmdCtx := command.Context{}
 
 		for i, rec := range toReadRecords {
+
 			f, err := os.OpenFile(filepath.Join(cwd, aof.aofDirname, rec.File), os.O_RDWR|os.O_APPEND|os.O_SYNC, 0o666)
 			if err != nil {
 				return nil, err
 			}
 
-			for {
-				cmdVal, ok, err := readCommand(f)
-				if err != nil {
-					return nil, fmt.Errorf("read command: %w", err)
-				}
+			if replay != nil {
+				slog.Debug("replaying file", "file", rec.File, "seq", rec.Seq)
 
-				if !ok {
-					break
-				}
+				for {
+					cmdVal, ok, err := readCommand(f)
+					if err != nil {
+						return nil, fmt.Errorf("read command: %w", err)
+					}
 
-				cmd, err := command.Parse(cmdCtx, cmdVal)
-				if err != nil {
-					return nil, fmt.Errorf("parse command: %w", err)
-				}
+					if !ok {
+						break
+					}
 
-				slog.Debug("replaying command", "cmd", cmd, "file", rec.File, "seq", rec.Seq)
-				err = replay(ctx, cmd)
-				if err != nil {
-					return nil, fmt.Errorf("replay command: %w", err)
+					cmd, err := command.Parse(cmdCtx, cmdVal)
+					if err != nil {
+						return nil, fmt.Errorf("parse command: %w", err)
+					}
+
+					slog.Debug("replaying command", "cmd", cmd, "file", rec.File, "seq", rec.Seq)
+					err = replay(ctx, cmd)
+					if err != nil {
+						return nil, fmt.Errorf("replay command: %w", err)
+					}
 				}
+			} else {
+				slog.Debug("skipping replay of file", "file", rec.File, "seq", rec.Seq)
 			}
 
 			// set last file as current
 			if i == len(toReadRecords)-1 {
+				slog.Debug("file set as current", "file", rec.File, "seq", rec.Seq)
 				aof.currentFileNum = rec.Seq
 				aof.currentFile = f
 			} else {
