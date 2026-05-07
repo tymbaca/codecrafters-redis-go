@@ -36,7 +36,7 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 	}
 	aof.root = root
 
-	data, err := os.ReadFile(filepath.Join(cwd, aofDirname, aofFilename))
+	data, err := os.ReadFile(filepath.Join(cwd, aofDirname, aofFilename+".manifest"))
 	if err != nil {
 		panic(err)
 	}
