@@ -16,11 +16,12 @@ type Service struct {
 	aof *aof.AOF
 	wal wal
 
-	dataMu   sync.RWMutex
-	data     map[string]entry
-	txsMu    sync.Mutex
-	txs      map[string][]command.Command
-	channels map[string]subscriberSet
+	dataMu               sync.RWMutex
+	data                 map[string]entry
+	txsMu                sync.Mutex
+	txs                  map[string][]command.Command
+	channels             map[string]subscriberSet
+	subscribersChanCount map[command.Context]int // counts
 
 	cfgMu       sync.RWMutex
 	dir         string
