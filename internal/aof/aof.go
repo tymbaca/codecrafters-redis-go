@@ -59,7 +59,7 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 		cmdCtx := command.Context{}
 
 		for i, rec := range toReadRecords {
-			f, err := os.OpenFile(filepath.Join(cwd, aof.aofDirname, rec.File), os.O_RDWR|os.O_APPEND, 0655)
+			f, err := os.OpenFile(filepath.Join(cwd, aof.aofDirname, rec.File), os.O_RDWR|os.O_APPEND|os.O_SYNC, 0o666)
 			if err != nil {
 				return nil, err
 			}
@@ -113,7 +113,7 @@ func readCommand(conn io.Reader) (enc.Value, bool, error) {
 }
 
 func readOrCreateManifest(root *os.Root, name string) (manifest.Manifest, *os.File, error) {
-	f, err := root.OpenFile(name, os.O_RDWR|os.O_CREATE, 0o666)
+	f, err := root.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0o666)
 	if err != nil {
 		return manifest.Manifest{}, nil, err
 	}
@@ -179,11 +179,10 @@ func createNewFile(a *AOF) error {
 	filename := filename(a)
 	path := filepath.Join(a.cwd, a.aofDirname, filename)
 
-	f, err := os.Create(path)
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND|os.O_SYNC, 0o666)
 	if err != nil {
 		return err
 	}
-
 	a.currentFile = f
 
 	a.manifest.Records = append(a.manifest.Records, manifest.Record{
