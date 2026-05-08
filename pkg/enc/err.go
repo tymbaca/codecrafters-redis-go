@@ -19,4 +19,7 @@ var (
 	ErrConfigSetUnknownOption = func(key string) error {
 		return fmt.Errorf("ERR Unknown option or number of arguments for CONFIG SET - '%s'", key)
 	}
+	ErrCantExecInSubcriberMode = func(cmd string) error {
+		return fmt.Errorf("ERR Can't execute '%s': only (P|S)SUBSCRIBE / (P|S)UNSUBSCRIBE / PING / QUIT / RESET are allowed in this context", cmd)
+	}
 )

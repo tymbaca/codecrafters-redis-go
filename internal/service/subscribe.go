@@ -24,21 +24,19 @@ func (s *Service) registerSubscriber(ctx context.Context, cmdCtx command.Context
 		subscribers = make(subscriberSet)
 	}
 
-	_, ok := subscribers[cmdCtx]
+	_, ok := subscribers[cmdCtx.ConnID]
 	if !ok {
 		// assign subscriber
-		subscribers[cmdCtx] = struct{}{}
+		subscribers[cmdCtx.ConnID] = cmdCtx.Conn
 		s.channels[ch] = subscribers
 
 		// increment this subscribers channel count
-		s.subscribersChanCount[cmdCtx]++
+		s.subscribersChanCount[cmdCtx.ConnID]++
 	}
 
-	reply := enc.Array{enc.Bulk("subscribe"), enc.Bulk(ch), enc.Integer(s.subscribersChanCount[cmdCtx])}
-	err := reply.Encode(cmdCtx.Conn)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cmdCtx.Conn.Send(enc.Array{
+		enc.Bulk("subscribe"),
+		enc.Bulk(ch),
+		enc.Integer(s.subscribersChanCount[cmdCtx.ConnID]),
+	})
 }

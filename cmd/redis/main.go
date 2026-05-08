@@ -15,7 +15,6 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/internal/service"
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
-	"github.com/google/uuid"
 )
 
 var (
@@ -29,7 +28,8 @@ var (
 func Run() error {
 	flag.Parse()
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		// Level: slog.LevelDebug,
+		Level: slog.LevelInfo,
 	})))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -84,10 +84,7 @@ func Run() error {
 }
 
 func handleConn(ctx context.Context, conn io.ReadWriter, svc *service.Service) error {
-	connCtx := command.Context{
-		ConnID: uuid.NewString(),
-		Conn:   conn,
-	}
+	connCtx := command.NewContext(conn)
 	defer svc.Exec(ctx, command.Discard{Context: connCtx})
 
 	for {

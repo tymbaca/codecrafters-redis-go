@@ -4,9 +4,12 @@ package command
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
+	"github.com/google/uuid"
 )
 
 type Command interface {
@@ -14,10 +17,19 @@ type Command interface {
 	isCommand()
 }
 
-type Context struct {
-	ConnID string
-	Conn   io.ReadWriter
+func NewContext(conn io.ReadWriter) Context {
+	return Context{
+		ConnID: uuid.NewString(),
+		Conn:   newConn(conn),
+	}
 }
+
+type Context struct {
+	ConnID ConnID
+	Conn   *Conn
+}
+
+type ConnID = string
 
 func (c Context) Ctx() Context { return c }
 func (c Context) isCommand()   {}
@@ -86,6 +98,31 @@ func Parse(ctx Context, cmd enc.Value) (Command, error) {
 	}
 }
 
+type Conn struct {
+	mu sync.Mutex
+	rw io.ReadWriter
+}
+
+func newConn(rw io.ReadWriter) *Conn {
+	return &Conn{
+		rw: rw,
+	}
+}
+
+func (c *Conn) Send(val enc.Value) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return val.Encode(c.rw)
+}
+
+func (c *Conn) Recv() (enc.Value, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return enc.Decode(c.rw)
+}
+
 func argsToString(array enc.Array) ([]string, error) {
 	res := make([]string, 0, len(array))
 	for _, el := range array {
@@ -98,4 +135,8 @@ func argsToString(array enc.Array) ([]string, error) {
 	}
 
 	return res, nil
+}
+
+func GetName(cmd Command) string {
+	return strings.ToUpper(reflect.ValueOf(cmd).Type().Name())
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,7 +22,7 @@ type Service struct {
 	txsMu                sync.Mutex
 	txs                  map[string][]command.Command
 	channels             map[string]subscriberSet
-	subscribersChanCount map[command.Context]int // counts
+	subscribersChanCount map[command.ConnID]int // counts
 
 	cfgMu       sync.RWMutex
 	dir         string
@@ -31,7 +32,7 @@ type Service struct {
 	appendFsync string
 }
 
-type subscriberSet = map[command.Context]struct{}
+type subscriberSet = map[command.ConnID]*command.Conn
 
 type Options struct {
 	Dir         string
@@ -46,7 +47,7 @@ func New(ctx context.Context, opts Options) (*Service, error) {
 		txs:                  make(map[string][]command.Command),
 		data:                 make(map[string]entry),
 		channels:             make(map[string]subscriberSet),
-		subscribersChanCount: make(map[command.Context]int),
+		subscribersChanCount: make(map[command.ConnID]int),
 		wal:                  noopWal{},
 		dir:                  opts.Dir,
 		appendOnly:           opts.AppendOnly,
@@ -85,6 +86,33 @@ func New(ctx context.Context, opts Options) (*Service, error) {
 	}
 
 	return svc, nil
+}
+
+func (s *Service) Intercept(ctx context.Context, cmdCtx command.Context, cmdVal enc.Value) error {
+	s.cfgMu.Lock()
+	defer s.cfgMu.Unlock()
+
+	if s.aof == nil {
+		return nil
+	}
+
+	cmd, err := command.Parse(cmdCtx, cmdVal)
+	if err != nil {
+		return nil
+	}
+
+	switch cmd.(type) {
+	default:
+		return nil
+	case command.Config:
+	case command.Discard:
+	case command.Exec:
+	case command.Incr:
+	case command.Multi:
+	case command.Set:
+	}
+
+	return s.aof.Append(ctx, cmdVal)
 }
 
 func (s *Service) Exec(ctx context.Context, cmd command.Command) (enc.Value, error) {
@@ -144,33 +172,6 @@ func (s *Service) execCmds(ctx context.Context, cmds []command.Command) (enc.Val
 	return arr, nil
 }
 
-func (s *Service) Intercept(ctx context.Context, cmdCtx command.Context, cmdVal enc.Value) error {
-	s.cfgMu.Lock()
-	defer s.cfgMu.Unlock()
-
-	if s.aof == nil {
-		return nil
-	}
-
-	cmd, err := command.Parse(cmdCtx, cmdVal)
-	if err != nil {
-		return nil
-	}
-
-	switch cmd.(type) {
-	default:
-		return nil
-	case command.Config:
-	case command.Discard:
-	case command.Exec:
-	case command.Incr:
-	case command.Multi:
-	case command.Set:
-	}
-
-	return s.aof.Append(ctx, cmdVal)
-}
-
 func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) (enc.Value, error) {
 	if ctx.Value(ignorePreludeKey) != nil {
 		return nil, nil
@@ -183,6 +184,17 @@ func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) 
 	if queue {
 		if queued := s.txQueue(ctx, cmd); queued {
 			return enc.Queued, nil
+		}
+	}
+
+	s.dataMu.Lock()
+	subsribed := s.subscribersChanCount[cmd.Ctx().ConnID]
+	s.dataMu.Unlock()
+	if subsribed > 0 {
+		switch cmd.(type) {
+		case command.Subscribe:
+		default:
+			return errValue(enc.ErrCantExecInSubcriberMode(strings.ToLower(command.GetName(cmd)))), nil
 		}
 	}
 

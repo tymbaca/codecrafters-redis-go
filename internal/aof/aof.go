@@ -16,7 +16,6 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/discard"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 	"github.com/codecrafters-io/redis-starter-go/pkg/manifest"
-	"github.com/google/uuid"
 	"github.com/samber/lo"
 )
 
@@ -68,10 +67,7 @@ func New(ctx context.Context, cwd, aofDirname, aofFilename string, replay func(c
 		toReadRecords := lo.Filter(aof.manifest.Records, func(r manifest.Record, _ int) bool { return r.Type == "i" })
 		slices.SortFunc(toReadRecords, func(a, b manifest.Record) int { return cmp.Compare(a.Seq, b.Seq) })
 
-		cmdCtx := command.Context{
-			ConnID: uuid.NewString(),
-			Conn:   discard.Discard,
-		}
+		cmdCtx := command.NewContext(discard.Discard)
 
 		for i, rec := range toReadRecords {
 
