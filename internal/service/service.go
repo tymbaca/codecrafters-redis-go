@@ -192,7 +192,10 @@ func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) 
 	s.dataMu.Unlock()
 	if subsribed > 0 {
 		switch cmd.(type) {
+		case command.Ping:
+			return enc.Array{enc.Bulk("pong"), enc.Bulk("")}, nil
 		case command.Subscribe:
+			break
 		default:
 			return errValue(enc.ErrCantExecInSubcriberMode(strings.ToLower(command.GetName(cmd)))), nil
 		}
