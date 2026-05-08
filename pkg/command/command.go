@@ -93,6 +93,9 @@ func Parse(ctx Context, cmd enc.Value) (Command, error) {
 	case "SUBSCRIBE":
 		return ParseSubscribe(ctx, args)
 
+	case "PUBLISH":
+		return ParsePublish(ctx, args)
+
 	default:
 		return nil, enc.ErrUnknownCommand(commandStr.Val)
 	}
