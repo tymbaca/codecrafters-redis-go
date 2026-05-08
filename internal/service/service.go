@@ -102,14 +102,14 @@ func (s *Service) Intercept(ctx context.Context, cmdCtx command.Context, cmdVal 
 	}
 
 	switch cmd.(type) {
-	default:
-		return nil
 	case command.Config:
 	case command.Discard:
 	case command.Exec:
 	case command.Incr:
 	case command.Multi:
 	case command.Set:
+	default:
+		return nil
 	}
 
 	return s.aof.Append(ctx, cmdVal)
@@ -153,6 +153,8 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 		return s.incr(ctx, cmd)
 	case command.Subscribe:
 		return s.subscribe(ctx, cmd)
+	case command.Publish:
+		return s.publish(ctx, cmd)
 	}
 
 	panic("unreachable")
