@@ -84,8 +84,8 @@ func Run() error {
 }
 
 func handleConn(ctx context.Context, conn io.ReadWriter, svc *service.Service) error {
-	connCtx := command.NewContext(conn)
-	defer svc.Exec(ctx, command.Discard{Context: connCtx})
+	cmdCtx := command.NewContext(conn)
+	defer svc.CloseConn(ctx, cmdCtx)
 
 	for {
 		command, ok, err := readCommand(conn)
@@ -97,7 +97,7 @@ func handleConn(ctx context.Context, conn io.ReadWriter, svc *service.Service) e
 			return nil
 		}
 
-		err = handleCommand(ctx, conn, connCtx, svc, command)
+		err = handleCommand(ctx, conn, cmdCtx, svc, command)
 		if err != nil {
 			return err
 		}

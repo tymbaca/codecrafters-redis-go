@@ -13,6 +13,9 @@ var (
 	ErrDiscardWithoutMulti = errors.New("ERR DISCARD without MULTI")
 	ErrUnknownCommand      = func(name string) error { return fmt.Errorf("ERR unknown command '%s'", name) }
 
+	ErrWrongNumberOfArgument = func(cmd string) error {
+		return fmt.Errorf("ERR wrong number of arguments for '%s' command")
+	}
 	ErrConfigSetFailed = func(key string, desc string) error {
 		return fmt.Errorf("ERR CONFIG SET failed (possibly related to argument '%s') - %s", key, desc)
 	}

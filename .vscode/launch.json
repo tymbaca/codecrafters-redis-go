@@ -12,7 +12,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/app",
             "asRoot": true,
-            "args": ["--dir", "/tmp/aof-7442", "--appendonly", "yes", "--appenddirname", "blueberry", "--appendfilename", "raspberry.aof", "--appendfsync", "always"]
+            // "args": ["--dir", "/tmp/aof-7442", "--appendonly", "yes", "--appenddirname", "blueberry", "--appendfilename", "raspberry.aof", "--appendfsync", "always"]
         }
     ]
 }

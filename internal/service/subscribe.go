@@ -31,12 +31,17 @@ func (s *Service) registerSubscriber(ctx context.Context, cmdCtx command.Context
 		s.channels[ch] = subscribers
 
 		// increment this subscribers channel count
-		s.subscribersChanCount[cmdCtx.ConnID]++
+		subMeta := s.subscribersMeta[cmdCtx.ConnID]
+		if subMeta.channels == nil {
+			subMeta.channels = make(map[string]struct{})
+		}
+		subMeta.channels[ch] = struct{}{}
+		s.subscribersMeta[cmdCtx.ConnID] = subMeta
 	}
 
 	return cmdCtx.Conn.Send(enc.Array{
 		enc.Bulk("subscribe"),
 		enc.Bulk(ch),
-		enc.Integer(s.subscribersChanCount[cmdCtx.ConnID]),
+		enc.Integer(len(s.subscribersMeta[cmdCtx.ConnID].channels)),
 	})
 }

@@ -17,12 +17,12 @@ type Service struct {
 	aof *aof.AOF
 	wal wal
 
-	dataMu               sync.RWMutex
-	data                 map[string]entry
-	txsMu                sync.Mutex
-	txs                  map[string][]command.Command
-	channels             map[string]subscriberSet
-	subscribersChanCount map[command.ConnID]int // counts
+	dataMu          sync.RWMutex
+	data            map[string]entry
+	txsMu           sync.Mutex
+	txs             map[string][]command.Command
+	channels        map[string]subscriberSet
+	subscribersMeta map[command.ConnID]subscriberMeta
 
 	cfgMu       sync.RWMutex
 	dir         string
@@ -34,6 +34,10 @@ type Service struct {
 
 type subscriberSet = map[command.ConnID]*command.Conn
 
+type subscriberMeta struct {
+	channels map[string]struct{}
+}
+
 type Options struct {
 	Dir         string
 	AppendOnly  bool
@@ -44,16 +48,16 @@ type Options struct {
 
 func New(ctx context.Context, opts Options) (*Service, error) {
 	svc := &Service{
-		txs:                  make(map[string][]command.Command),
-		data:                 make(map[string]entry),
-		channels:             make(map[string]subscriberSet),
-		subscribersChanCount: make(map[command.ConnID]int),
-		wal:                  noopWal{},
-		dir:                  opts.Dir,
-		appendOnly:           opts.AppendOnly,
-		appendDir:            opts.AppendDir,
-		appendFile:           opts.AppendFile,
-		appendFsync:          opts.AppendFsync,
+		txs:             make(map[string][]command.Command),
+		data:            make(map[string]entry),
+		channels:        make(map[string]subscriberSet),
+		subscribersMeta: make(map[command.ConnID]subscriberMeta),
+		wal:             noopWal{},
+		dir:             opts.Dir,
+		appendOnly:      opts.AppendOnly,
+		appendDir:       opts.AppendDir,
+		appendFile:      opts.AppendFile,
+		appendFsync:     opts.AppendFsync,
 	}
 
 	if svc.dir == "" {
@@ -131,6 +135,24 @@ func (s *Service) Exec(ctx context.Context, cmd command.Command) (enc.Value, err
 	return s.execCmd(ctx, cmd)
 }
 
+func (s *Service) CloseConn(ctx context.Context, cmdCtx command.Context) {
+	_, _ = s.discard(ctx, command.Discard{Context: cmdCtx})
+
+	s.dataMu.Lock()
+	for ch := range s.subscribersMeta[cmdCtx.ConnID].channels {
+		// delete conn from channel
+		subscribers := s.channels[ch]
+		delete(subscribers, cmdCtx.ConnID)
+		s.channels[ch] = subscribers
+
+		// delete conn metadata
+		if s.subscribersMeta[cmdCtx.ConnID].channels != nil {
+			delete(s.subscribersMeta[cmdCtx.ConnID].channels, ch)
+		}
+	}
+	s.dataMu.Unlock()
+}
+
 func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, error) {
 	switch cmd := cmd.(type) {
 	case command.Ping:
@@ -153,6 +175,8 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 		return s.incr(ctx, cmd)
 	case command.Subscribe:
 		return s.subscribe(ctx, cmd)
+	case command.Unubscribe:
+		return s.unsubscribe(ctx, cmd)
 	case command.Publish:
 		return s.publish(ctx, cmd)
 	}
@@ -190,13 +214,13 @@ func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) 
 	}
 
 	s.dataMu.Lock()
-	subsribed := s.subscribersChanCount[cmd.Ctx().ConnID]
+	_, subsribed := s.subscribersMeta[cmd.Ctx().ConnID]
 	s.dataMu.Unlock()
-	if subsribed > 0 {
+	if subsribed {
 		switch cmd.(type) {
 		case command.Ping:
 			return enc.Array{enc.Bulk("pong"), enc.Bulk("")}, nil
-		case command.Subscribe:
+		case command.Subscribe, command.Unubscribe:
 			break
 		default:
 			return errValue(enc.ErrCantExecInSubcriberMode(strings.ToLower(command.GetName(cmd)))), nil

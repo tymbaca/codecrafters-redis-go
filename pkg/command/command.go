@@ -49,53 +49,44 @@ func Parse(ctx Context, cmd enc.Value) (Command, error) {
 	switch strings.ToUpper(commandStr.Val) {
 	case "PING":
 		return Ping{Context: ctx}, nil
-
 	case "ECHO":
 		if len(arr) != 2 {
 			return nil, fmt.Errorf("invalid ECHO command: must be 1 arg, got: %#v", args)
 		}
 
 		return Echo{Val: arr[1], Context: ctx}, nil
-
 	case "GET":
 		if len(args) < 1 {
 			return nil, fmt.Errorf("invalid GET command: must be 1 or more args, got: %#v", args)
 		}
 
 		return ParseGet(ctx, args)
-
 	case "SET":
 		if len(args) < 2 {
 			return nil, fmt.Errorf("invalid SET command: must be 3 or more args, got: %#v", args)
 		}
 
 		return ParseSet(ctx, args)
-
 	case "INCR":
 		if len(args) < 1 {
 			return nil, fmt.Errorf("invalid INCR command: must be 1 arg, got: %#v", args)
 		}
 
 		return ParseIncr(ctx, args)
-
 	case "MULTI":
 		return Multi{Context: ctx}, nil
-
 	case "EXEC":
 		return Exec{Context: ctx}, nil
-
 	case "DISCARD":
 		return Discard{Context: ctx}, nil
-
 	case "CONFIG":
 		return ParseConfig(ctx, args)
-
 	case "SUBSCRIBE":
 		return ParseSubscribe(ctx, args)
-
+	case "UNSUBSCRIBE":
+		return ParseUnubscribe(ctx, args)
 	case "PUBLISH":
 		return ParsePublish(ctx, args)
-
 	default:
 		return nil, enc.ErrUnknownCommand(commandStr.Val)
 	}
