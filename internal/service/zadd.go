@@ -14,11 +14,12 @@ func (s *Service) zadd(_ context.Context, cmd command.ZAdd) (enc.Value, error) {
 
 	var set *sorted.Set
 
-	entry, ok := s.data[cmd.Key]
+	entr, ok := s.data[cmd.Key]
 	if !ok {
 		set = sorted.New()
+		s.data[cmd.Key] = entry{val: set}
 	} else {
-		set, ok = entry.val.(*sorted.Set)
+		set, ok = entr.val.(*sorted.Set)
 		if !ok {
 			return nil, enc.ErrWrongType
 		}

@@ -1,6 +1,7 @@
 package sorted
 
 import (
+	"log/slog"
 	"sync"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/skip"
@@ -28,10 +29,13 @@ func (s *Set) Add(score float64, member string) (inserted bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	slog.Debug("ADD")
+
 	el, exists := s.hmap[member]
 	if exists {
 		s.list.Remove(el.Score(), el.Member())
 	} else {
+		slog.Debug("INSERTED")
 		inserted = true
 	}
 

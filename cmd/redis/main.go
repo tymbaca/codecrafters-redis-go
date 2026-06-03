@@ -28,8 +28,8 @@ var (
 func Run() error {
 	flag.Parse()
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		// Level: slog.LevelDebug,
-		Level: slog.LevelInfo,
+		Level: slog.LevelDebug,
+		// Level: slog.LevelInfo,
 	})))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
