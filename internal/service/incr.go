@@ -37,6 +37,6 @@ func (s *Service) incr(ctx context.Context, cmd command.Incr) (enc.Value, error)
 	return enc.Integer(val), nil
 }
 
-func errValue(err error) enc.Value {
+func errValue(err error) enc.SimpleError {
 	return enc.SimpleError(err.Error())
 }

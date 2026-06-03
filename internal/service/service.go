@@ -132,25 +132,15 @@ func (s *Service) Exec(ctx context.Context, cmd command.Command) (enc.Value, err
 		return pre, err
 	}
 
-	return s.execCmd(ctx, cmd)
-}
-
-func (s *Service) CloseConn(ctx context.Context, cmdCtx command.Context) {
-	_, _ = s.discard(ctx, command.Discard{Context: cmdCtx})
-
-	s.dataMu.Lock()
-	for ch := range s.subscribersMeta[cmdCtx.ConnID].channels {
-		// delete conn from channel
-		subscribers := s.channels[ch]
-		delete(subscribers, cmdCtx.ConnID)
-		s.channels[ch] = subscribers
-
-		// delete conn metadata
-		if s.subscribersMeta[cmdCtx.ConnID].channels != nil {
-			delete(s.subscribersMeta[cmdCtx.ConnID].channels, ch)
-		}
+	val, err := s.execCmd(ctx, cmd)
+	if enc.IsError(err) {
+		return errValue(err), nil
 	}
-	s.dataMu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return val, nil
 }
 
 func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, error) {
@@ -179,6 +169,8 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 		return s.unsubscribe(ctx, cmd)
 	case command.Publish:
 		return s.publish(ctx, cmd)
+	case command.ZAdd:
+		return s.zadd(ctx, cmd)
 	}
 
 	panic("unreachable")
@@ -230,6 +222,24 @@ func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) 
 	return nil, nil
 }
 
+func (s *Service) CloseConn(ctx context.Context, cmdCtx command.Context) {
+	_, _ = s.discard(ctx, command.Discard{Context: cmdCtx})
+
+	s.dataMu.Lock()
+	for ch := range s.subscribersMeta[cmdCtx.ConnID].channels {
+		// delete conn from channel
+		subscribers := s.channels[ch]
+		delete(subscribers, cmdCtx.ConnID)
+		s.channels[ch] = subscribers
+
+		// delete conn metadata
+		if s.subscribersMeta[cmdCtx.ConnID].channels != nil {
+			delete(s.subscribersMeta[cmdCtx.ConnID].channels, ch)
+		}
+	}
+	s.dataMu.Unlock()
+}
+
 type wal interface {
 	Append(ctx context.Context, cmds ...command.Command) error
 }
@@ -239,7 +249,7 @@ type noopWal struct{}
 func (w noopWal) Append(ctx context.Context, cmds ...command.Command) error { return nil }
 
 type entry struct {
-	val       string
+	val       any
 	expireSet bool
 	expire    time.Time
 }

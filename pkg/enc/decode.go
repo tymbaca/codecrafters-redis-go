@@ -1,3 +1,4 @@
+// Package enc provides RESP types and encoding/decoding functions.
 package enc
 
 import (

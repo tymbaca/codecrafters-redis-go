@@ -31,7 +31,13 @@ func (s *Service) setInner(ctx context.Context, cmd command.Set) (option.Value[s
 	defer s.dataMu.Unlock()
 
 	oldValue, exists := s.data[cmd.Key]
-	oldValueOption := option.Wrap(oldValue.val, exists)
+
+	oldValueStr, ok := oldValue.val.(string)
+	if !ok && cmd.GetOld {
+		return option.None[string](), false, enc.ErrWrongType
+	}
+
+	oldValueOption := option.Wrap(oldValueStr, exists)
 
 	if cmd.Exists == command.ExistsKindXX && !exists {
 		return oldValueOption, false, nil

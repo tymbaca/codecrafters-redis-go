@@ -32,5 +32,10 @@ func (s *Service) getInner(ctx context.Context, cmd command.Get) (string, bool, 
 		return "", false, nil
 	}
 
-	return entry.val, true, nil
+	val, ok := entry.val.(string)
+	if !ok {
+		return "", false, enc.ErrWrongType
+	}
+
+	return val, true, nil
 }
