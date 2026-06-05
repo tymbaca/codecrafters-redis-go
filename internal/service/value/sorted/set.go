@@ -62,8 +62,11 @@ func (s *Set) Rank(member string) (int, bool) {
 
 // Range uses indexes (ranks), both inclusive.
 func (s *Set) Range(from, to int) (result []string) {
+	slog.Debug("raw", "from", from, "to", to)
+
 	from = wrapNegativeIndex(from, s.list.Length())
 	to = wrapNegativeIndex(to, s.list.Length())
+	slog.Debug("wrapped", "from", from, "to", to)
 
 	if from > to {
 		return nil
