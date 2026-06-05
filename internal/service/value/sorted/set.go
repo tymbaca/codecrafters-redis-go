@@ -1,6 +1,7 @@
 package sorted
 
 import (
+	"fmt"
 	"log/slog"
 	"sync"
 
@@ -61,6 +62,9 @@ func (s *Set) Rank(member string) (int, bool) {
 
 // Range uses indexes (ranks), both inclusive.
 func (s *Set) Range(from, to int) (result []string) {
+	from = wrapNegativeIndex(from, s.list.Length())
+	to = wrapNegativeIndex(to, s.list.Length())
+
 	if from > to {
 		return nil
 	}
@@ -80,4 +84,16 @@ func (s *Set) Range(from, to int) (result []string) {
 	}
 
 	return result
+}
+
+func wrapNegativeIndex(v int, length int) int {
+	if v < 0 {
+		moveTimes := (-v)/length + 1
+		fmt.Printf("moveTimes: %v\n", moveTimes)
+
+		v += length * moveTimes
+		v %= length
+	}
+
+	return v
 }

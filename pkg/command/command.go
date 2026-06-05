@@ -91,6 +91,8 @@ func Parse(ctx Context, cmd enc.Value) (Command, error) {
 		return ParseZAdd(ctx, args)
 	case "ZRANK":
 		return ParseZRank(ctx, args)
+	case "ZRANGE":
+		return ParseZRange(ctx, args)
 	default:
 		return nil, enc.ErrUnknownCommand(commandStr.Val)
 	}
