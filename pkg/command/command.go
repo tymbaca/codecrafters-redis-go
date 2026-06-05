@@ -89,6 +89,8 @@ func Parse(ctx Context, cmd enc.Value) (Command, error) {
 		return ParsePublish(ctx, args)
 	case "ZADD":
 		return ParseZAdd(ctx, args)
+	case "ZRANK":
+		return ParseZRank(ctx, args)
 	default:
 		return nil, enc.ErrUnknownCommand(commandStr.Val)
 	}
