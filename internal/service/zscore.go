@@ -10,8 +10,8 @@ import (
 )
 
 func (s *Service) zscore(_ context.Context, cmd command.ZScore) (enc.Value, error) {
-	s.dataMu.Lock()
-	defer s.dataMu.Unlock()
+	s.dataMu.RLock()
+	defer s.dataMu.RUnlock()
 
 	entr, ok := s.data[cmd.Key]
 	if !ok {

@@ -99,6 +99,8 @@ func Parse(ctx Context, cmd enc.Value) (Command, error) {
 		return ParseZCard(ctx, args)
 	case "ZSCORE":
 		return ParseZScore(ctx, args)
+	case "GEOADD":
+		return ParseGeoAdd(ctx, args)
 	default:
 		return nil, enc.ErrUnknownCommand(commandStr.Val)
 	}

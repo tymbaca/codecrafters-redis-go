@@ -26,9 +26,9 @@ func (s *Service) zadd(_ context.Context, cmd command.ZAdd) (enc.Value, error) {
 	}
 
 	inserted := set.Add(cmd.Score, cmd.Member)
-	if inserted {
-		return enc.Integer(1), nil
+	if !inserted {
+		return enc.Integer(0), nil
 	}
 
-	return enc.Integer(0), nil
+	return enc.Integer(1), nil
 }

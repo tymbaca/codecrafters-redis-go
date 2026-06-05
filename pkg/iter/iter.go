@@ -1,7 +1,7 @@
 package iter
 
-func New[T any](data []T) Iterator[T] {
-	return Iterator[T]{
+func New[T any](data []T) *Iterator[T] {
+	return &Iterator[T]{
 		data: data,
 	}
 }

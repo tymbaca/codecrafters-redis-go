@@ -2,7 +2,6 @@ package sorted
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/skip"
 )
@@ -20,15 +19,11 @@ type Key struct {
 }
 
 type Set struct {
-	mu   sync.RWMutex
 	hmap map[string]*skip.Node
 	list *skip.List
 }
 
 func (s *Set) Add(score float64, member string) (inserted bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	el, exists := s.hmap[member]
 	if exists {
 		s.list.Remove(el.Score(), el.Member())
@@ -55,9 +50,6 @@ func (s *Set) Remove(member string) (removed bool) {
 }
 
 func (s *Set) Score(member string) (float64, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	el, ok := s.hmap[member]
 	if !ok {
 		return 0, false
@@ -69,9 +61,6 @@ func (s *Set) Score(member string) (float64, bool) {
 // Rank gives 0 for smallest score.
 // If two have the same score, ranking is lexicological by the text of members: "aa" > "bb".
 func (s *Set) Rank(member string) (int, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	el, ok := s.hmap[member]
 	if !ok {
 		return 0, false
@@ -113,9 +102,6 @@ func (s *Set) Range(from, to int) (result []string) {
 }
 
 func (s *Set) Length() int {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	return s.list.Length()
 }
 
