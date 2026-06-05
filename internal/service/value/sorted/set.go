@@ -64,6 +64,7 @@ func (s *Set) Rank(member string) (int, bool) {
 func (s *Set) Range(from, to int) (result []string) {
 	slog.Debug("raw", "from", from, "to", to)
 
+	// hack to pass the idiotic corner case with `min = -4, max = -1, len = 3 => [0 1 2]`
 	if from == -s.list.Length()-1 && to == -1 {
 		from = 0
 		to = s.list.Length() - 1
@@ -92,6 +93,10 @@ func (s *Set) Range(from, to int) (result []string) {
 	}
 
 	return result
+}
+
+func (s *Set) Length() int {
+	return s.list.Length()
 }
 
 func wrapNegativeIndex(v int, length int) int {
