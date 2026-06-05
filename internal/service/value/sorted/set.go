@@ -2,7 +2,6 @@ package sorted
 
 import (
 	"fmt"
-	"log/slog"
 	"sync"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/skip"
@@ -30,13 +29,10 @@ func (s *Set) Add(score float64, member string) (inserted bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	slog.Debug("ADD")
-
 	el, exists := s.hmap[member]
 	if exists {
 		s.list.Remove(el.Score(), el.Member())
 	} else {
-		slog.Debug("INSERTED")
 		inserted = true
 	}
 
@@ -44,6 +40,18 @@ func (s *Set) Add(score float64, member string) (inserted bool) {
 	s.hmap[member] = el
 
 	return inserted
+}
+
+func (s *Set) Score(member string) (float64, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	el, ok := s.hmap[member]
+	if !ok {
+		return 0, false
+	}
+
+	return el.Score(), true
 }
 
 // Rank gives 0 for smallest score.
@@ -62,8 +70,6 @@ func (s *Set) Rank(member string) (int, bool) {
 
 // Range uses indexes (ranks), both inclusive.
 func (s *Set) Range(from, to int) (result []string) {
-	slog.Debug("raw", "from", from, "to", to)
-
 	// hack to pass the idiotic corner case with `min = -4, max = -1, len = 3 => [0 1 2]`
 	if from == -s.list.Length()-1 && to == -1 {
 		from = 0
@@ -72,7 +78,6 @@ func (s *Set) Range(from, to int) (result []string) {
 
 	from = wrapNegativeIndex(from, s.list.Length())
 	to = wrapNegativeIndex(to, s.list.Length())
-	slog.Debug("wrapped", "from", from, "to", to)
 
 	if from > to {
 		return nil
@@ -96,6 +101,9 @@ func (s *Set) Range(from, to int) (result []string) {
 }
 
 func (s *Set) Length() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	return s.list.Length()
 }
 

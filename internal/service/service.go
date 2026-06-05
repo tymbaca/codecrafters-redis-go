@@ -177,6 +177,8 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 		return s.zrange(ctx, cmd)
 	case command.ZCard:
 		return s.zcard(ctx, cmd)
+	case command.ZScore:
+		return s.zscore(ctx, cmd)
 	}
 
 	panic("unreachable")

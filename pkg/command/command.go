@@ -95,6 +95,8 @@ func Parse(ctx Context, cmd enc.Value) (Command, error) {
 		return ParseZRange(ctx, args)
 	case "ZCARD":
 		return ParseZCard(ctx, args)
+	case "ZSCORE":
+		return ParseZScore(ctx, args)
 	default:
 		return nil, enc.ErrUnknownCommand(commandStr.Val)
 	}
