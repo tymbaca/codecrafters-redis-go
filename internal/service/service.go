@@ -171,6 +171,8 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 		return s.publish(ctx, cmd)
 	case command.ZAdd:
 		return s.zadd(ctx, cmd)
+	case command.ZRem:
+		return s.zrem(ctx, cmd)
 	case command.ZRank:
 		return s.zrank(ctx, cmd)
 	case command.ZRange:

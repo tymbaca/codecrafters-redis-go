@@ -42,6 +42,18 @@ func (s *Set) Add(score float64, member string) (inserted bool) {
 	return inserted
 }
 
+func (s *Set) Remove(member string) (removed bool) {
+	el, ok := s.hmap[member]
+	if !ok {
+		return false
+	}
+
+	s.list.Remove(el.Score(), el.Member())
+	delete(s.hmap, member)
+
+	return true
+}
+
 func (s *Set) Score(member string) (float64, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
