@@ -106,7 +106,7 @@ func handleConn(ctx context.Context, conn io.ReadWriter, svc *service.Service) e
 
 func readCommand(conn io.Reader) (enc.Value, bool, error) {
 	val, err := enc.Decode(conn)
-	if errors.Is(err, io.EOF) {
+	if errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) {
 		return nil, false, nil
 	}
 	if err != nil {
