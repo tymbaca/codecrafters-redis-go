@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
@@ -32,9 +33,17 @@ func ParseGeoAdd(ctx Context, args []string) (cmd GeoAdd, err error) {
 		return GeoAdd{}, err
 	}
 
+	if cmd.Lon < -180 || cmd.Lon > 180 {
+		return GeoAdd{}, fmt.Errorf("ERR longitude value (%f) is invalid", cmd.Lon)
+	}
+
 	cmd.Lat, err = parseFloat("geoadd", iter)
 	if err != nil {
 		return GeoAdd{}, err
+	}
+
+	if cmd.Lat < -85.05112878 || cmd.Lat > 85.05112878 {
+		return GeoAdd{}, fmt.Errorf("ERR latitude value (%f) is invalid", cmd.Lon)
 	}
 
 	cmd.Member, ok = iter.Next()
