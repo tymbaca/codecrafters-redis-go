@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/service/value/sorted"
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
+	"github.com/codecrafters-io/redis-starter-go/pkg/value/sorted"
 )
 
 func (s *Service) zscore(_ context.Context, cmd command.ZScore) (enc.Value, error) {

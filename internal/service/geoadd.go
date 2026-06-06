@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/service/value/sorted"
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
+	"github.com/codecrafters-io/redis-starter-go/pkg/value/geo"
+	"github.com/codecrafters-io/redis-starter-go/pkg/value/sorted"
 )
 
 func (s *Service) geoadd(_ context.Context, cmd command.GeoAdd) (enc.Value, error) {
@@ -25,14 +26,10 @@ func (s *Service) geoadd(_ context.Context, cmd command.GeoAdd) (enc.Value, erro
 		}
 	}
 
-	inserted := set.Add(geoScore(cmd.Lon, cmd.Lat), cmd.Member)
+	inserted := set.Add(geo.ToScore(cmd.Coord), cmd.Member)
 	if !inserted {
 		return enc.Integer(0), nil
 	}
 
 	return enc.Integer(1), nil
-}
-
-func geoScore(lon, lat float64) float64 {
-	return 0
 }

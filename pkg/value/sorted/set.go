@@ -3,7 +3,7 @@ package sorted
 import (
 	"fmt"
 
-	"github.com/codecrafters-io/redis-starter-go/pkg/skip"
+	"github.com/codecrafters-io/redis-starter-go/pkg/value/skip"
 )
 
 func New() *Set {

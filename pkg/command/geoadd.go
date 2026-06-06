@@ -6,12 +6,13 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
 	"github.com/codecrafters-io/redis-starter-go/pkg/iter"
+	"github.com/codecrafters-io/redis-starter-go/pkg/value/geo"
 )
 
 type GeoAdd struct {
-	Key      string
-	Lon, Lat float64
-	Member   string
+	Key    string
+	Coord  geo.Coord
+	Member string
 	Context
 }
 
@@ -28,22 +29,22 @@ func ParseGeoAdd(ctx Context, args []string) (cmd GeoAdd, err error) {
 		return GeoAdd{}, enc.ErrWrongNumberOfArgument("geoadd")
 	}
 
-	cmd.Lon, err = parseFloat("geoadd", iter)
+	cmd.Coord.Lon, err = parseFloat("geoadd", iter)
 	if err != nil {
 		return GeoAdd{}, err
 	}
 
-	if cmd.Lon < -180 || cmd.Lon > 180 {
-		return GeoAdd{}, fmt.Errorf("ERR longitude value (%f) is invalid", cmd.Lon)
+	if cmd.Coord.Lon < -180 || cmd.Coord.Lon > 180 {
+		return GeoAdd{}, fmt.Errorf("ERR longitude value (%f) is invalid", cmd.Coord.Lon)
 	}
 
-	cmd.Lat, err = parseFloat("geoadd", iter)
+	cmd.Coord.Lat, err = parseFloat("geoadd", iter)
 	if err != nil {
 		return GeoAdd{}, err
 	}
 
-	if cmd.Lat < -85.05112878 || cmd.Lat > 85.05112878 {
-		return GeoAdd{}, fmt.Errorf("ERR latitude value (%f) is invalid", cmd.Lon)
+	if cmd.Coord.Lat < -85.05112878 || cmd.Coord.Lat > 85.05112878 {
+		return GeoAdd{}, fmt.Errorf("ERR latitude value (%f) is invalid", cmd.Coord.Lon)
 	}
 
 	cmd.Member, ok = iter.Next()

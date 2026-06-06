@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/service/value/sorted"
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
+	"github.com/codecrafters-io/redis-starter-go/pkg/value/sorted"
 )
 
 func (s *Service) zcard(_ context.Context, cmd command.ZCard) (enc.Value, error) {

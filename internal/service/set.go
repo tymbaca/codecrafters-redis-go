@@ -5,7 +5,7 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/command"
 	"github.com/codecrafters-io/redis-starter-go/pkg/enc"
-	"github.com/codecrafters-io/redis-starter-go/pkg/option"
+	"github.com/codecrafters-io/redis-starter-go/pkg/value/option"
 )
 
 func (s *Service) set(ctx context.Context, cmd command.Set) (enc.Value, error) {
