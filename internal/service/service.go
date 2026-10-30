@@ -183,6 +183,8 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 		return s.zscore(ctx, cmd)
 	case command.GeoAdd:
 		return s.geoadd(ctx, cmd)
+	case command.GeoPos:
+		return s.geopos(ctx, cmd)
 	}
 
 	panic("unreachable")

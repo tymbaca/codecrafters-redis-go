@@ -14,6 +14,18 @@ const (
 	lonRange = MaxLon - MinLon
 )
 
+func decode(geoCode uint64) Coord {
+	// Align bits of both latitude and longitude to take even-numbered position
+	y := geoCode >> 1
+	x := geoCode
+
+	// Compact bits back to 32-bit ints
+	gridLatitudeNumber := compactInt64ToInt32(x)
+	gridLongitudeNumber := compactInt64ToInt32(y)
+
+	return convertGridNumbersToCoordinates(gridLatitudeNumber, gridLongitudeNumber)
+}
+
 func compactInt64ToInt32(v uint64) uint32 {
 	result := v & 0x5555555555555555
 	result = (result | (result >> 1)) & 0x3333333333333333
@@ -36,16 +48,4 @@ func convertGridNumbersToCoordinates(gridLatitudeNumber, gridLongitudeNumber uin
 	longitude := (gridLongitudeMin + gridLongitudeMax) / 2
 
 	return Coord{Lat: latitude, Lon: longitude}
-}
-
-func decode(geoCode uint64) Coord {
-	// Align bits of both latitude and longitude to take even-numbered position
-	y := geoCode >> 1
-	x := geoCode
-
-	// Compact bits back to 32-bit ints
-	gridLatitudeNumber := compactInt64ToInt32(x)
-	gridLongitudeNumber := compactInt64ToInt32(y)
-
-	return convertGridNumbersToCoordinates(gridLatitudeNumber, gridLongitudeNumber)
 }

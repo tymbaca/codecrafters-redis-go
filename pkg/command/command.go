@@ -103,6 +103,8 @@ func Parse(ctx Context, cmd enc.Value) (Command, error) {
 		return ParseZScore(ctx, args)
 	case "GEOADD":
 		return ParseGeoAdd(ctx, args)
+	case "GEOPOS":
+		return ParseGeoPos(ctx, args)
 	default:
 		return nil, enc.ErrUnknownCommand(commandStr.Val)
 	}
