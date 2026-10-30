@@ -26,15 +26,20 @@ func (s *Service) geopos(_ context.Context, cmd command.GeoPos) (enc.Value, erro
 		return nil, enc.ErrWrongType
 	}
 
-	score, ok := set.Score(cmd.Member)
-	if !ok {
-		return enc.NullArr(), nil
+	var result []enc.Value
+
+	for _, member := range cmd.Members {
+		score, ok := set.Score(member)
+		if !ok {
+			return enc.NullArr(), nil
+		}
+
+		coord := geo.FromScore(score)
+		result = append(result, enc.Arr(
+			enc.Bulk(fmt.Sprint(coord.Lon)),
+			enc.Bulk(fmt.Sprint(coord.Lat)),
+		))
 	}
 
-	coord := geo.FromScore(score)
-
-	return enc.Arr(
-		enc.Bulk(fmt.Sprint(coord.Lon)),
-		enc.Bulk(fmt.Sprint(coord.Lat)),
-	), nil
+	return enc.Arr(result...), nil
 }

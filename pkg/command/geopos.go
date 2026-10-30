@@ -6,8 +6,8 @@ import (
 )
 
 type GeoPos struct {
-	Key    string
-	Member string
+	Key     string
+	Members []string
 	Context
 }
 
@@ -24,9 +24,20 @@ func ParseGeoPos(ctx Context, args []string) (cmd GeoPos, err error) {
 		return GeoPos{}, enc.ErrWrongNumberOfArgument("geopos")
 	}
 
-	cmd.Member, ok = iter.Next()
+	member, ok := iter.Next()
 	if !ok {
 		return GeoPos{}, enc.ErrWrongNumberOfArgument("geoadd")
+	}
+
+	cmd.Members = append(cmd.Members, member)
+
+	for {
+		member, ok := iter.Next()
+		if !ok {
+			break
+		}
+
+		cmd.Members = append(cmd.Members, member)
 	}
 
 	return cmd, nil

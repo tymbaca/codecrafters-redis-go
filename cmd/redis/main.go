@@ -57,6 +57,8 @@ func Run() error {
 		return err
 	}
 
+	slog.Info("server started, listening to port :6379")
+
 	for {
 		conn, err := l.Accept()
 		if errors.Is(err, net.ErrClosed) {

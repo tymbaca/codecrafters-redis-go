@@ -2,7 +2,7 @@ submit:
     codecrafters submit
      
 run *args: build
-    ./bin/app {{args}}
+    @./bin/app {{args}}
 
 build:
     go build -o ./bin/app ./app
