@@ -35,10 +35,12 @@ func (c Context) Ctx() Context { return c }
 func (c Context) isCommand()   {}
 
 func Parse(ctx Context, cmd enc.Value) (Command, error) {
-	arr, ok := cmd.(enc.Array)
+	arrVal, ok := cmd.(enc.Array)
 	if !ok {
 		return nil, fmt.Errorf("cmd must be array of values")
 	}
+
+	arr := arrVal.Items()
 
 	commandStr := arr[0].(enc.BulkString)
 	args, err := argsToString(arr[1:])
@@ -131,7 +133,7 @@ func (c *Conn) Recv() (enc.Value, error) {
 	return enc.Decode(c.rw)
 }
 
-func argsToString(array enc.Array) ([]string, error) {
+func argsToString(array []enc.Value) ([]string, error) {
 	res := make([]string, 0, len(array))
 	for _, el := range array {
 		bs, ok := el.(enc.BulkString)

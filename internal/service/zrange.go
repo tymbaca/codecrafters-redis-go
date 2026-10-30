@@ -12,11 +12,11 @@ func (s *Service) zrange(_ context.Context, cmd command.ZRange) (enc.Value, erro
 	s.dataMu.Lock()
 	defer s.dataMu.Unlock()
 
-	var resultArray enc.Array
+	var resultArray []enc.Value
 
 	entr, ok := s.data[cmd.Key]
 	if !ok {
-		return resultArray, nil
+		return enc.Arr(resultArray...), nil
 	}
 
 	set, ok := entr.val.(*sorted.Set)
@@ -29,5 +29,5 @@ func (s *Service) zrange(_ context.Context, cmd command.ZRange) (enc.Value, erro
 		resultArray = append(resultArray, enc.Bulk(v))
 	}
 
-	return resultArray, nil
+	return enc.Arr(resultArray...), nil
 }

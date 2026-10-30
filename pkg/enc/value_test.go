@@ -9,16 +9,16 @@ import (
 
 func TestAll(t *testing.T) {
 	t.Run("all", func(t *testing.T) {
-		a := Array{
+		a := Arr(
 			BulkString{Val: "hello"},
 			SimpleString("world"),
 			SimpleError("bad"),
-			Array{
+			Arr(
 				Integer(77),
 				Integer(-77),
 				BulkString{Val: "foo"},
-			},
-		}
+			),
+		)
 
 		buf := bytes.NewBuffer(nil)
 
@@ -29,16 +29,16 @@ func TestAll(t *testing.T) {
 
 		parsedVal, err := Decode(buf)
 		require.NoError(t, err)
-		require.Equal(t, Array{
+		require.Equal(t, Arr(
 			BulkString{Val: "hello"},
 			SimpleString("world"),
 			SimpleError("bad"),
-			Array{
+			Arr(
 				Integer(77),
 				Integer(-77),
 				BulkString{Val: "foo"},
-			},
-		}, parsedVal)
+			),
+		), parsedVal)
 	})
 	t.Run("empty array", func(t *testing.T) {
 		a := Array{}

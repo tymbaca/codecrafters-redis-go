@@ -24,7 +24,7 @@ func (s *Service) config(ctx context.Context, cmd command.Config) (enc.Value, er
 }
 
 func (s *Service) configGet(_ context.Context, cmd command.Config) (enc.Value, error) {
-	var res enc.Array
+	var res []enc.Value
 
 	for i := range cmd.Keys {
 		key := cmd.Keys[i]
@@ -54,7 +54,7 @@ func (s *Service) configGet(_ context.Context, cmd command.Config) (enc.Value, e
 		res = append(res, enc.BulkString{Val: val})
 	}
 
-	return res, nil
+	return enc.Arr(res...), nil
 }
 
 func (s *Service) configSet(ctx context.Context, cmd command.Config) (enc.Value, error) {

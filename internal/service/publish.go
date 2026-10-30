@@ -20,11 +20,11 @@ func (s *Service) publish(_ context.Context, cmd command.Publish) (enc.Value, er
 	for connID, conn := range subscribers {
 		wg.Go(func() error {
 			slog.Debug("publish: sending to conn", "connID", connID)
-			return conn.Send(enc.Array{
+			return conn.Send(enc.Arr(
 				enc.Bulk("message"),
 				enc.Bulk(cmd.Chan),
 				enc.Bulk(cmd.Val),
-			})
+			))
 		})
 	}
 

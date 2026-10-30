@@ -189,7 +189,7 @@ func (s *Service) execCmd(ctx context.Context, cmd command.Command) (enc.Value, 
 }
 
 func (s *Service) execCmds(ctx context.Context, cmds []command.Command) (enc.Value, error) {
-	var arr enc.Array
+	var arr []enc.Value
 	for _, cmd := range cmds {
 		val, err := s.execCmd(ctx, cmd)
 		if err != nil {
@@ -199,7 +199,7 @@ func (s *Service) execCmds(ctx context.Context, cmds []command.Command) (enc.Val
 		arr = append(arr, val)
 	}
 
-	return arr, nil
+	return enc.Arr(arr...), nil
 }
 
 func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) (enc.Value, error) {
@@ -223,7 +223,7 @@ func (s *Service) prelude(ctx context.Context, cmd command.Command, queue bool) 
 	if subsribed {
 		switch cmd.(type) {
 		case command.Ping:
-			return enc.Array{enc.Bulk("pong"), enc.Bulk("")}, nil
+			return enc.Arr(enc.Bulk("pong"), enc.Bulk("")), nil
 		case command.Subscribe, command.Unubscribe:
 			break
 		default:

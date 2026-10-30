@@ -39,9 +39,9 @@ func (s *Service) registerSubscriber(ctx context.Context, cmdCtx command.Context
 		s.subscribersMeta[cmdCtx.ConnID] = subMeta
 	}
 
-	return cmdCtx.Conn.Send(enc.Array{
+	return cmdCtx.Conn.Send(enc.Arr(
 		enc.Bulk("subscribe"),
 		enc.Bulk(ch),
 		enc.Integer(len(s.subscribersMeta[cmdCtx.ConnID].channels)),
-	})
+	))
 }

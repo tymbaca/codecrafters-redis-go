@@ -27,11 +27,11 @@ func (s *Service) unsubscribe(_ context.Context, cmd command.Unubscribe) (enc.Va
 			}
 		}
 
-		cmd.Conn.Send(enc.Array{
+		cmd.Conn.Send(enc.Arr(
 			enc.Bulk("unsubscribe"),
 			enc.Bulk(ch),
 			enc.Integer(len(s.subscribersMeta[cmd.ConnID].channels)),
-		})
+		))
 	}
 
 	return nil, nil

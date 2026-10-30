@@ -6,20 +6,43 @@ import (
 	"strings"
 )
 
-type Array []Value
+func NullArr() Array {
+	return Array{len: -1}
+}
+
+func Arr(items ...Value) Array {
+	return Array{len: len(items), items: items}
+}
+
+type Array struct {
+	len   int
+	items []Value
+}
+
+func (a Array) Len() int {
+	return a.len
+}
+
+func (a Array) Items() []Value {
+	return a.items
+}
 
 func (a Array) Type() Type {
 	return TypeArray
 }
 
 func (a Array) String() string {
+	if a.len < 0 {
+		return "nil"
+	}
+
 	b := &strings.Builder{}
 
 	b.WriteString("[")
-	for i, elem := range a {
+	for i, elem := range a.items {
 		b.WriteString(elem.String())
 
-		if i != len(a)-1 {
+		if i != len(a.items)-1 {
 			b.WriteString(", ")
 		}
 	}
@@ -29,12 +52,12 @@ func (a Array) String() string {
 }
 
 func (a Array) Encode(w io.Writer) error {
-	_, err := fmt.Fprintf(w, "*%d\r\n", len(a))
+	_, err := fmt.Fprintf(w, "*%d\r\n", a.len)
 	if err != nil {
 		return err
 	}
 
-	for _, el := range a {
+	for _, el := range a.items {
 		err := el.Encode(w)
 		if err != nil {
 			return err
@@ -47,18 +70,22 @@ func (a Array) Encode(w io.Writer) error {
 func decodeArray(r io.Reader) (Array, error) {
 	num, err := readNumber(r)
 	if err != nil {
-		return nil, fmt.Errorf("read array length: %w", err)
+		return Array{}, fmt.Errorf("read array length: %w", err)
 	}
 
-	array := make(Array, 0, num)
+	if num < 0 {
+		return NullArr(), nil
+	}
+
+	array := make([]Value, 0, num)
 	for i := range num {
 		val, err := Decode(r)
 		if err != nil {
-			return nil, fmt.Errorf("read elem %d in array: %w", i, err)
+			return Array{}, fmt.Errorf("read elem %d in array: %w", i, err)
 		}
 
 		array = append(array, val)
 	}
 
-	return array, nil
+	return Array{len: len(array), items: array}, nil
 }
