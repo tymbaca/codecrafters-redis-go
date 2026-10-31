@@ -1,7 +1,7 @@
 package geo
 
 type Coord struct {
-	Lat, Lon float64
+	Lon, Lat float64
 }
 
 func FromScore(score float64) Coord {

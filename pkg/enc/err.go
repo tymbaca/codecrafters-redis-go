@@ -16,7 +16,7 @@ var (
 	ErrUnknownCommand      = func(name string) error { return newError(fmt.Errorf("ERR unknown command '%s'", name)) }
 
 	ErrWrongNumberOfArgument = func(cmd string) error {
-		return newError(fmt.Errorf("ERR wrong number of arguments for '%s' command"))
+		return newError(fmt.Errorf("ERR wrong number of arguments for '%s' command", cmd))
 	}
 	ErrConfigSetFailed = func(key string, desc string) error {
 		return newError(fmt.Errorf("ERR CONFIG SET failed (possibly related to argument '%s') - %s", key, desc))
