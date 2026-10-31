@@ -31,7 +31,8 @@ func (s *Service) geopos(_ context.Context, cmd command.GeoPos) (enc.Value, erro
 	for _, member := range cmd.Members {
 		score, ok := set.Score(member)
 		if !ok {
-			return enc.NullArr(), nil
+			result = append(result, enc.NullArr())
+			continue
 		}
 
 		coord := geo.FromScore(score)
